@@ -1,0 +1,1226 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Supply Management System (SIM WMS)</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts Inter & Prompt -->
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Prompt', 'sans-serif'],
+                    },
+                    colors: {
+                        supply: {
+                            50: '#faf5ff',
+                            100: '#f3e8ff',
+                            500: '#a855f7',
+                            600: '#9333ea',
+                            700: '#7e22ce',
+                            800: '#6b21a8',
+                            900: '#581c87'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
+        /* CSS สั่งพิมพ์ A4 */
+        @media print {
+            body * {
+                visibility: hidden !important;
+            }
+
+            #printPreviewModal,
+            #printModalContent,
+            #printModalContent * {
+                visibility: visible !important;
+            }
+
+            #printPreviewModal {
+                position: absolute !important;
+                left: 0 !important;
+                top: 0 !important;
+                width: 100% !important;
+                height: auto !important;
+                min-height: 100% !important;
+                background: #ffffff !important;
+                overflow: visible !important;
+                display: block !important;
+            }
+
+            #printModalContent {
+                position: absolute !important;
+                left: 0 !important;
+                top: 0 !important;
+                width: 100% !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                background: #ffffff !important;
+                display: block !important;
+            }
+
+            .print-page {
+                visibility: visible !important;
+                page-break-after: always !important;
+                break-after: page !important;
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
+                width: 210mm !important;
+                min-height: 280mm !important;
+                max-height: 297mm !important;
+                margin: 0 auto !important;
+                padding: 15mm !important;
+                box-shadow: none !important;
+                border: none !important;
+                border-radius: 0 !important;
+                box-sizing: border-box !important;
+                display: flex !important;
+                flex-direction: column !important;
+                justify-content: space-between !important;
+            }
+
+            .no-print,
+            #printPreviewModal .no-print,
+            #printPreviewModal button {
+                display: none !important;
+            }
+
+            @page {
+                size: A4 portrait;
+                margin: 0;
+            }
+        }
+    </style>
+</head>
+<body class="bg-slate-100 font-sans min-h-screen text-slate-800 flex flex-col md:flex-row">
+
+    <!-- Sidebar Navigation -->
+    <aside class="w-full md:w-64 bg-slate-900 text-white flex-shrink-0 flex flex-col justify-between shadow-xl z-20">
+        <div>
+            <!-- App Header -->
+            <div class="p-4 border-b border-slate-800 flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <div class="bg-purple-600 text-white p-2 rounded-lg font-bold text-xl flex items-center justify-center w-10 h-10 shadow-lg">
+                        <i class="fa-solid fa-boxes-packing"></i>
+                    </div>
+                    <div>
+                        <h1 class="font-bold text-lg leading-tight tracking-wide text-white">SUPPLY WMS</h1>
+                        <p class="text-xs text-purple-300">Supply Inventory System</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Module Header Badge -->
+            <div class="p-3 border-b border-slate-800 bg-purple-950/40 flex items-center justify-between">
+                <span class="text-xs font-bold text-purple-200 tracking-wider flex items-center gap-2">
+                    <span id="cloudStatusDot" class="w-2.5 h-2.5 bg-purple-400 rounded-full animate-pulse"></span>
+                    SUPPLY MODULE
+                </span>
+                <span id="cloudStatusBadge" class="text-[10px] bg-purple-800 text-purple-100 px-2 py-0.5 rounded font-mono font-semibold">CONNECTING</span>
+            </div>
+
+            <nav class="p-3 space-y-1">
+                <!-- 1. INBOUND MENU WITH ACCORDION -->
+                <div>
+                    <button onclick="toggleSubMenu('inbound')" id="nav-inbound" class="w-full flex items-center justify-between px-4 py-3 rounded-lg font-medium text-sm transition-colors text-slate-300 hover:bg-slate-800 hover:text-white">
+                        <div class="flex items-center space-x-3">
+                            <i class="fa-solid fa-truck-ramp-box w-5 text-purple-400"></i>
+                            <span>INBOUND (รับเข้า)</span>
+                        </div>
+                        <i id="arrow-inbound" class="fa-solid fa-chevron-down text-xs text-slate-400 transition-transform duration-200"></i>
+                    </button>
+                    <!-- ซ่อน Submenu เป็นค่าเริ่มต้นโดยเพิ่ม class 'hidden' -->
+                    <div id="subnav-inbound" class="pl-9 pr-2 py-1 space-y-1 bg-slate-950/40 rounded-b-lg hidden">
+                        <button onclick="switchInboundSubMode('manual')" id="sub-inbound-manual" class="w-full text-left py-1.5 px-3 rounded text-xs font-semibold text-purple-300 hover:bg-slate-800 flex items-center gap-2">
+                            <i class="fa-solid fa-caret-right text-purple-400"></i> MANUAL
+                        </button>
+                        <button onclick="switchInboundSubMode('scan')" id="sub-inbound-scan" class="w-full text-left py-1.5 px-3 rounded text-xs font-semibold text-slate-400 hover:bg-slate-800 hover:text-white flex items-center gap-2">
+                            <i class="fa-solid fa-caret-right text-slate-500"></i> SCAN
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 2. OUTBOUND MENU -->
+                <button onclick="switchTab('outbound')" id="nav-outbound" class="w-full flex items-center space-x-3 px-4 py-3 rounded-lg font-medium text-sm transition-colors text-slate-300 hover:bg-slate-800 hover:text-white">
+                    <i class="fa-solid fa-dolly w-5 text-amber-400"></i>
+                    <span>OUTBOUND (เบิกออก)</span>
+                </button>
+
+                <!-- 3. DASHBOARD MENU -->
+                <button onclick="switchTab('dashboard')" id="nav-dashboard" class="w-full flex items-center space-x-3 px-4 py-3 rounded-lg font-medium text-sm transition-colors text-slate-300 hover:bg-slate-800 hover:text-white">
+                    <i class="fa-solid fa-chart-pie w-5 text-sky-400"></i>
+                    <span>DASHBOARD</span>
+                </button>
+
+                <!-- 4. HISTORY MENU WITH ACCORDION -->
+                <div>
+                    <button onclick="toggleSubMenu('history')" id="nav-history" class="w-full flex items-center justify-between px-4 py-3 rounded-lg font-medium text-sm transition-colors text-slate-300 hover:bg-slate-800 hover:text-white">
+                        <div class="flex items-center space-x-3">
+                            <i class="fa-solid fa-clock-rotate-left w-5 text-indigo-400"></i>
+                            <span>HISTORY (ประวัติ)</span>
+                        </div>
+                        <i id="arrow-history" class="fa-solid fa-chevron-down text-xs text-slate-400 transition-transform duration-200"></i>
+                    </button>
+                    <!-- ซ่อน Submenu เป็นค่าเริ่มต้นโดยเพิ่ม class 'hidden' -->
+                    <div id="subnav-history" class="pl-9 pr-2 py-1 space-y-1 bg-slate-950/40 rounded-b-lg hidden">
+                        <button onclick="switchHistorySubTab('inbound')" id="sub-hist-inbound" class="w-full text-left py-1.5 px-3 rounded text-xs font-semibold text-purple-300 hover:bg-slate-800 flex items-center gap-2">
+                            <i class="fa-solid fa-caret-right"></i> INBOUND HISTORY
+                        </button>
+                        <button onclick="switchHistorySubTab('outbound')" id="sub-hist-outbound" class="w-full text-left py-1.5 px-3 rounded text-xs font-semibold text-slate-400 hover:bg-slate-800 hover:text-white flex items-center gap-2">
+                            <i class="fa-solid fa-caret-right"></i> OUTBOUND HISTORY
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 5. PRINT MENU -->
+                <button onclick="switchTab('print')" id="nav-print" class="w-full flex items-center space-x-3 px-4 py-3 rounded-lg font-medium text-sm transition-colors text-slate-300 hover:bg-slate-800 hover:text-white">
+                    <i class="fa-solid fa-qrcode w-5 text-purple-400"></i>
+                    <span>PRINT (พิมพ์บาร์โค้ด)</span>
+                </button>
+            </nav>
+        </div>
+
+        <div class="p-4 border-t border-slate-800 text-xs text-slate-500 text-center">
+            <p class="font-bold text-purple-300">SUPPLY MODULE</p>
+            <p class="mt-1">Supply Stock Control v2.5</p>
+        </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 flex flex-col min-w-0 overflow-y-auto">
+        <header class="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between shadow-sm sticky top-0 z-10">
+            <div>
+                <h2 id="headerTitle" class="text-xl font-bold text-slate-800">SUPPLY - INBOUND (MANUAL)</h2>
+                <p id="headerSubtitle" class="text-xs text-slate-500">กรอกข้อมูลรับสินค้า Supply พร้อมระบุลูกค้า (Customer)</p>
+            </div>
+        </header>
+
+        <div class="p-4 md:p-6 space-y-6 flex-1">
+            <!-- 1. INBOUND PAGE -->
+            <section id="page-inbound" class="space-y-6">
+                <!-- MANUAL MODE -->
+                <div id="inbound-manual-container" class="max-w-4xl mx-auto bg-white rounded-2xl shadow-xl border border-purple-100 overflow-hidden">
+                    <div class="bg-gradient-to-r from-purple-900 via-purple-800 to-indigo-900 px-6 py-5 text-white flex justify-between items-center shadow-inner">
+                        <div class="flex items-center space-x-3">
+                            <div class="p-2.5 bg-purple-700/50 rounded-xl border border-purple-400/30 backdrop-blur-sm">
+                                <i class="fa-solid fa-boxes-packing text-purple-200 text-xl"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-lg tracking-wide flex items-center gap-2">
+                                    SUPPLY INBOUND <span class="text-purple-300 text-xs font-semibold px-2.5 py-0.5 bg-purple-950/60 rounded-full border border-purple-500/30">MANUAL MODE</span>
+                                </h3>
+                            </div>
+                        </div>
+                    </div>
+
+                    <form id="inboundForm" onsubmit="handleInboundSubmit(event)" class="p-6 md:p-8 space-y-6">
+                        <div class="bg-slate-50/80 p-5 rounded-xl border border-slate-200/80 space-y-4">
+                            <h4 class="text-xs font-bold uppercase tracking-wider text-purple-900 flex items-center gap-2 border-b border-slate-200 pb-2">
+                                <i class="fa-solid fa-circle-info text-purple-600"></i> ข้อมูลสินค้า (MATERIAL INFO)
+                            </h4>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1.5 flex items-center gap-1.5">
+                                        MATERIAL / PART NO. <span class="text-rose-500">*</span>
+                                    </label>
+                                    <input type="text" id="in_material" required placeholder="เช่น 30015349" class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-purple-500 outline-none text-sm bg-white shadow-sm">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1.5 flex items-center gap-1.5">
+                                        DESCRIPTION <span class="text-rose-500">*</span>
+                                    </label>
+                                    <input type="text" id="in_description" required placeholder="เช่น PPIPCN695JBWZ" class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-purple-500 outline-none text-sm bg-white shadow-sm">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-slate-50/80 p-5 rounded-xl border border-slate-200/80 space-y-4">
+                            <h4 class="text-xs font-bold uppercase tracking-wider text-purple-900 flex items-center gap-2 border-b border-slate-200 pb-2">
+                                <i class="fa-solid fa-warehouse text-purple-600"></i> จำนวนและสถานที่จัดเก็บ
+                            </h4>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1.5">QUANTITY *</label>
+                                    <input type="number" step="any" min="0.01" id="in_quantity" required placeholder="จำนวน" class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-purple-500 outline-none text-sm bg-white font-semibold">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1.5">UNIT *</label>
+                                    <input type="text" id="in_unit" required value="PC." class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-purple-500 outline-none text-sm bg-white">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1.5">LOCATION *</label>
+                                    <input type="text" id="in_location" required placeholder="เช่น SH-02-01" class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-purple-500 outline-none text-sm bg-white font-semibold">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-slate-50/80 p-5 rounded-xl border border-slate-200/80 space-y-4">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1.5">CUSTOMER</label>
+                                    <select id="in_customer" class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-purple-500 outline-none text-sm bg-white font-semibold">
+                                        <option value="SHARP">SHARP</option>
+                                        <option value="TORC">TORC</option>
+                                        <option value="ATLANTIC">ATLANTIC</option>
+                                        <option value="MCP">MCP</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1.5">DATE *</label>
+                                    <input type="date" id="in_date" required class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-purple-500 outline-none text-sm bg-white font-semibold">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center justify-end gap-3 pt-2">
+                            <button type="submit" class="px-8 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs uppercase shadow-lg transition-all">
+                                <i class="fa-solid fa-floppy-disk mr-1"></i> SAVE (บันทึกรับเข้า)
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- SCAN MODE -->
+                <div id="inbound-scan-container" class="max-w-2xl mx-auto bg-white rounded-2xl shadow-xl border border-purple-100 p-8 hidden">
+                    <h3 class="font-bold text-center text-slate-800 text-lg uppercase mb-6 tracking-wide">
+                        SCAN QR-CODE / BARCODE (SUPPLY INBOUND)
+                    </h3>
+                    <div class="relative max-w-lg mx-auto">
+                        <input type="text" id="scan_inbound_input" onkeypress="handleScanInbound(event)" placeholder="สแกนหรือพิมพ์เพื่อนำเข้า" class="w-full text-center py-4 px-6 text-lg border-2 border-purple-500 rounded-xl focus:ring-4 focus:ring-purple-200 outline-none shadow-sm font-semibold">
+                    </div>
+                </div>
+            </section>
+
+            <!-- 2. OUTBOUND PAGE -->
+            <section id="page-outbound" class="space-y-6 hidden">
+                <div class="max-w-3xl mx-auto bg-white rounded-2xl shadow-xl border border-purple-100 p-8 space-y-8">
+                    <h3 class="font-bold text-center text-slate-800 text-lg uppercase tracking-wide">
+                        SCAN BARCODE (SUPPLY OUTBOUND)
+                    </h3>
+                    <p class="text-xs text-center text-slate-500 -mt-6">รองรับการสแกน Barcode (เช่น S-311-XXXXXX) หรือ Material / Part No.</p>
+                    
+                    <div class="relative max-w-lg mx-auto">
+                        <input type="text" id="scan_outbound_input" onkeypress="handleScanOutbound(event)" placeholder="สแกน Barcode (S-311-XXXXXX) หรือ Material No." class="w-full text-center py-4 px-6 text-lg border-2 border-purple-500 rounded-xl focus:ring-4 focus:ring-purple-200 outline-none shadow-sm font-semibold">
+                    </div>
+
+                    <div class="pt-4 border-t border-slate-100">
+                        <h4 class="font-bold text-xs text-slate-700 uppercase tracking-wider mb-4">
+                            รายการสินค้าในระบบล่าสุด (FIFO)
+                        </h4>
+                        <div id="outbound_fifo_list" class="space-y-3"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 3. HISTORY PAGE -->
+            <section id="page-history" class="space-y-6 hidden">
+                <div class="bg-white rounded-2xl shadow-xl border border-slate-200 p-6 space-y-6">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-100 pb-4">
+                        <div class="flex items-center gap-3">
+                            <h3 class="font-bold text-slate-900 text-lg tracking-tight">SUPPLY HISTORY</h3>
+                            <span id="historySubTabBadge" class="bg-purple-100 text-purple-700 text-xs font-bold px-3 py-1 rounded-md uppercase">INBOUND HISTORY</span>
+                        </div>
+                        <button onclick="exportHistoryCSV()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-bold flex items-center gap-2 border border-slate-300 transition-all">
+                            <i class="fa-solid fa-download"></i> Download CSV
+                        </button>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs text-slate-700">
+                            <thead class="bg-purple-50 font-bold uppercase text-purple-900 border-y border-purple-100">
+                                <tr>
+                                    <th class="p-3">MATERIAL</th>
+                                    <th class="p-3">DESCRIPTION</th>
+                                    <th class="p-3 text-right">QUANTITY</th>
+                                    <th class="p-3">UNIT</th>
+                                    <th class="p-3">LOCATION</th>
+                                    <th class="p-3">CUSTOMER</th>
+                                    <th class="p-3">DATE</th>
+                                    <th class="p-3">REMARK</th>
+                                </tr>
+                            </thead>
+                            <tbody id="history_tbody" class="divide-y divide-slate-100 font-medium"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 4. DASHBOARD PAGE -->
+            <section id="page-dashboard" class="space-y-6 hidden">
+                <div class="bg-white rounded-2xl shadow-xl border border-slate-200 p-6 space-y-6">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-100 pb-4">
+                        <div>
+                            <h3 class="font-bold text-slate-800 text-base uppercase">SUPPLY DASHBOARD</h3>
+                            <p class="text-xs text-slate-400 mt-0.5">เรียงลำดับสินค้าเข้าก่อน-ออกก่อน (FIFO)</p>
+                        </div>
+                        
+                        <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
+                            <div class="relative flex-1 sm:w-72">
+                                <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                                <input type="text" id="dash_search" onkeyup="renderDashboardTable()" placeholder="ค้นหา Material หรือ Description..." class="w-full pl-9 pr-4 py-2 border border-slate-300 rounded-lg text-xs outline-none focus:ring-2 focus:ring-purple-500 shadow-sm">
+                            </div>
+                            <button onclick="exportDashboardCSV()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold flex items-center justify-center gap-2 shadow-md transition-all">
+                                <i class="fa-solid fa-file-excel"></i> Download CSV
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs text-slate-700">
+                            <thead class="bg-purple-50 font-bold uppercase text-purple-900 border-y border-purple-100">
+                                <tr>
+                                    <th class="p-3">MATERIAL</th>
+                                    <th class="p-3">DESCRIPTION</th>
+                                    <th class="p-3 text-right">QUANTITY</th>
+                                    <th class="p-3">UNIT</th>
+                                    <th class="p-3">LOCATION</th>
+                                    <th class="p-3">CUSTOMER</th>
+                                    <th class="p-3">DATE</th>
+                                </tr>
+                            </thead>
+                            <tbody id="dash_inventory_tbody" class="divide-y divide-slate-100 font-medium"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 5. PRINT PAGE -->
+            <section id="page-print" class="space-y-6 hidden">
+                <div class="bg-white rounded-2xl shadow-xl border border-slate-200 p-6 space-y-6">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-100 pb-4">
+                        <h3 class="font-bold text-slate-800 text-base uppercase">เลือกรายการพิมพ์ BARCODE SUPPLY (SELECT FOR PRINTING)</h3>
+                        <div class="flex items-center gap-3 w-full sm:w-auto">
+                            <input type="text" id="print_search" onkeyup="renderPrintTable()" placeholder="Search Material / Description / Barcode..." class="px-4 py-2 border border-slate-300 rounded-lg text-xs outline-none focus:ring-2 focus:ring-purple-500 w-full sm:w-64">
+                            <button onclick="printSelectedBarcodes()" class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-xs font-bold flex items-center gap-2 whitespace-nowrap shadow-md">
+                                <i class="fa-solid fa-print"></i> พิมพ์ที่เลือก ( <span id="selected_count">0</span> )
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs text-slate-700">
+                            <thead class="bg-purple-50 font-bold uppercase text-purple-900 border-y border-purple-100">
+                                <tr>
+                                    <th class="p-3 w-10 text-center"><input type="checkbox" id="selectAllPrint" onclick="toggleSelectAllPrint(this)"></th>
+                                    <th class="p-3">MATERIAL</th>
+                                    <th class="p-3">DESCRIPTION</th>
+                                    <th class="p-3 text-right">QUANTITY</th>
+                                    <th class="p-3">UNIT</th>
+                                    <th class="p-3">LOCATION</th>
+                                    <th class="p-3">BARCODE</th>
+                                    <th class="p-3">CUSTOMER</th>
+                                    <th class="p-3">DATE</th>
+                                </tr>
+                            </thead>
+                            <tbody id="print_tbody" class="divide-y divide-slate-100 font-medium"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- OUTBOUND CONFIRMATION MODAL -->
+    <div id="outboundModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-3xl max-w-4xl w-full p-8 shadow-2xl border border-purple-100 space-y-6 relative animate-fade-in">
+            <div class="flex items-center justify-between pb-2">
+                <h3 class="text-purple-950 font-black text-xl tracking-wide uppercase">SUPPLY OUTBOUND CONFIRMATION</h3>
+                <button onclick="closeOutboundModal()" class="flex items-center gap-1.5 text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 px-4 py-2 rounded-xl transition-all">
+                    <i class="fa-solid fa-arrow-left"></i> ย้อนกลับ
+                </button>
+            </div>
+
+            <div id="outboundItemsContainer" class="space-y-4 max-h-[50vh] overflow-y-auto pr-1"></div>
+
+            <div class="space-y-2 pt-2 text-center max-w-lg mx-auto">
+                <label class="block text-xs font-bold text-slate-800 uppercase tracking-wider">
+                    REMARK <span class="text-rose-500 font-normal">(ใส่ REMARK ทุกครั้ง) *</span>
+                </label>
+                <input type="text" id="outbound_remark_input" placeholder="เช่น JOB1840065871" class="w-full text-center px-6 py-3.5 border-2 border-purple-300 focus:border-purple-600 rounded-full text-sm font-bold text-slate-800 outline-none shadow-sm focus:ring-4 focus:ring-purple-100 transition-all">
+            </div>
+
+            <div class="flex justify-center pt-2">
+                <button onclick="confirmOutboundSubmit()" class="w-48 py-3.5 bg-emerald-500 hover:bg-emerald-600 text-white font-black text-sm rounded-full shadow-lg hover:shadow-xl transition-all tracking-wider uppercase">
+                    SAVE
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- PRINT PREVIEW MODAL -->
+    <div id="printPreviewModal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-900 text-white rounded-2xl max-w-4xl w-full max-h-[92vh] flex flex-col shadow-2xl overflow-hidden border border-slate-700">
+            <div class="px-6 py-4 border-b border-slate-800 flex items-center justify-between no-print">
+                <div class="flex items-center gap-3">
+                    <i class="fa-solid fa-print text-purple-400 text-lg"></i>
+                    <h3 class="font-bold text-sm sm:text-base tracking-wide" id="modalDocTitle">ตัวอย่างก่อนพิมพ์ A4 BARCODE SUPPLY</h3>
+                </div>
+                <div class="flex items-center gap-3">
+                    <button onclick="printA4Document()" class="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs rounded-lg shadow-md transition-all flex items-center gap-2">
+                        <i class="fa-solid fa-print"></i> พิมพ์เอกสาร A4
+                    </button>
+                    <button onclick="closePrintModal()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs rounded-lg transition-all">
+                        ปิด
+                    </button>
+                </div>
+            </div>
+
+            <div class="flex-1 overflow-y-auto p-4 sm:p-8 bg-slate-800/50 flex justify-center">
+                <div id="printModalContent" class="w-full max-w-[210mm] flex flex-col gap-8"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- NOTIFICATION TOAST -->
+    <div id="toast" class="fixed bottom-5 right-5 z-50 transform translate-y-20 opacity-0 transition-all duration-300 bg-slate-900 text-white px-5 py-3 rounded-xl shadow-2xl flex items-center space-x-3">
+        <i id="toastIcon" class="fa-solid fa-circle-check text-emerald-400 text-xl"></i>
+        <span id="toastMessage" class="text-xs font-semibold">บันทึกข้อมูลเรียบร้อยแล้ว</span>
+    </div>
+
+    <!-- FIREBASE MODULE LOADER -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-app.js";
+        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-auth.js";
+        import { getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyD-1D4IRiLPEFwuJa_pyf1GRQzWl2WE5nA",
+            authDomain: "supply-wms-system.firebaseapp.com",
+            projectId: "supply-wms-system",
+            storageBucket: "supply-wms-system.firebasestorage.app",
+            messagingSenderId: "196216519563",
+            appId: "1:196216519563:web:79305fca76dc525c6a0d8e",
+            measurementId: "G-G6KS373WQ3"
+        };
+
+        const appId = 'supply-wms';
+        let db, auth;
+        window.inventoryData = [];
+        window.outboundData = [];
+        window.isFirebaseConnected = false;
+
+        try {
+            const app = initializeApp(firebaseConfig);
+            auth = getAuth(app);
+            db = getFirestore(app);
+
+            await signInAnonymously(auth);
+            window.isFirebaseConnected = true;
+            window.db = db;
+            window.doc = doc;
+            window.setDoc = setDoc;
+            window.deleteDoc = deleteDoc;
+            window.appId = appId;
+
+            updateCloudStatus(true);
+
+            // Listen to Firestore Inventory
+            const invRef = collection(db, 'artifacts', appId, 'public', 'data', 'inventory');
+            onSnapshot(invRef, (snapshot) => {
+                window.inventoryData = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+                renderDashboardTable();
+                renderOutboundFifoList();
+                renderHistoryTable();
+                renderPrintTable();
+            });
+
+            // Listen to Firestore Outbound History
+            const outRef = collection(db, 'artifacts', appId, 'public', 'data', 'outbound_history');
+            onSnapshot(outRef, (snapshot) => {
+                window.outboundData = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+                renderHistoryTable();
+            });
+
+        } catch (err) {
+            console.error("Firebase init failed:", err);
+            updateCloudStatus(false);
+        }
+
+        function updateCloudStatus(connected) {
+            const dot = document.getElementById('cloudStatusDot');
+            const badge = document.getElementById('cloudStatusBadge');
+            if (connected) {
+                if (dot) dot.className = "w-2.5 h-2.5 bg-emerald-400 rounded-full animate-pulse";
+                if (badge) {
+                    badge.innerText = "FIREBASE ONLINE";
+                    badge.className = "text-[10px] bg-emerald-800 text-emerald-100 px-2 py-0.5 rounded font-mono font-semibold";
+                }
+            } else {
+                if (dot) dot.className = "w-2.5 h-2.5 bg-amber-400 rounded-full";
+                if (badge) {
+                    badge.innerText = "LOCAL STORAGE";
+                    badge.className = "text-[10px] bg-amber-800 text-amber-100 px-2 py-0.5 rounded font-mono font-semibold";
+                }
+            }
+        }
+    </script>
+
+    <script>
+        let currentHistoryTab = 'inbound';
+        let selectedPrintItems = new Set();
+        let currentOutboundItems = [];
+
+        // ===== ฟังก์ชันควบคุมการซ่อน/แสดง เมนูย่อย (TOGGLE SUBMENU) =====
+        function toggleSubMenu(menuId) {
+            const subnav = document.getElementById(`subnav-${menuId}`);
+            const arrow = document.getElementById(`arrow-${menuId}`);
+            
+            if (subnav) {
+                const isHidden = subnav.classList.contains('hidden');
+                
+                if (isHidden) {
+                    subnav.classList.remove('hidden');
+                    if (arrow) arrow.style.transform = 'rotate(180deg)';
+                } else {
+                    subnav.classList.add('hidden');
+                    if (arrow) arrow.style.transform = 'rotate(0deg)';
+                }
+            }
+
+            // เมื่อคลิกปุ่มหลักให้สลับหน้าตามหลัก
+            switchTab(menuId);
+        }
+
+        function switchTab(tabId) {
+            document.querySelectorAll('section').forEach(s => s.classList.add('hidden'));
+            const target = document.getElementById(`page-${tabId}`);
+            if (target) target.classList.remove('hidden');
+
+            const titleEl = document.getElementById('headerTitle');
+            const subTitleEl = document.getElementById('headerSubtitle');
+
+            if (tabId === 'inbound') {
+                if (titleEl) titleEl.innerText = "SUPPLY - INBOUND";
+                if (subTitleEl) subTitleEl.innerText = "บันทึกข้อมูลรับสินค้า Supply (MANUAL / SCAN)";
+            } else if (tabId === 'outbound') {
+                if (titleEl) titleEl.innerText = "SUPPLY - OUTBOUND";
+                if (subTitleEl) subTitleEl.innerText = "สแกน Barcode (เช่น S-311-XXXXXX) หรือ Material เพื่อนำออกสินค้า";
+                renderOutboundFifoList();
+                setTimeout(() => document.getElementById('scan_outbound_input')?.focus(), 100);
+            } else if (tabId === 'dashboard') {
+                if (titleEl) titleEl.innerText = "SUPPLY - DASHBOARD";
+                if (subTitleEl) subTitleEl.innerText = "ตารางรายการสินค้าและจำนวนคงเหลือในคลัง (FIFO)";
+                renderDashboardTable();
+            } else if (tabId === 'history') {
+                if (titleEl) titleEl.innerText = "SUPPLY - HISTORY";
+                if (subTitleEl) subTitleEl.innerText = "ตรวจสอบประวัติรับเข้า/เบิกจ่าย พร้อมดาวน์โหลด CSV";
+                renderHistoryTable();
+            } else if (tabId === 'print') {
+                if (titleEl) titleEl.innerText = "SUPPLY - PRINT BARCODE";
+                if (subTitleEl) subTitleEl.innerText = "พิมพ์ บาร์โค้ดติดสินค้าและใควบคุมกระดาษ A4";
+                renderPrintTable();
+            }
+        }
+
+        function switchInboundSubMode(mode) {
+            switchTab('inbound');
+            const manualContainer = document.getElementById('inbound-manual-container');
+            const scanContainer = document.getElementById('inbound-scan-container');
+            const subManual = document.getElementById('sub-inbound-manual');
+            const subScan = document.getElementById('sub-inbound-scan');
+
+            if (mode === 'manual') {
+                if (manualContainer) manualContainer.classList.remove('hidden');
+                if (scanContainer) scanContainer.classList.add('hidden');
+                if (subManual) subManual.className = "w-full text-left py-1.5 px-3 rounded text-xs font-semibold text-purple-300 hover:bg-slate-800 flex items-center gap-2";
+                if (subScan) subScan.className = "w-full text-left py-1.5 px-3 rounded text-xs font-semibold text-slate-400 hover:bg-slate-800 hover:text-white flex items-center gap-2";
+            } else {
+                if (manualContainer) manualContainer.classList.add('hidden');
+                if (scanContainer) scanContainer.classList.remove('hidden');
+                if (subScan) subScan.className = "w-full text-left py-1.5 px-3 rounded text-xs font-semibold text-purple-300 hover:bg-slate-800 flex items-center gap-2";
+                if (subManual) subManual.className = "w-full text-left py-1.5 px-3 rounded text-xs font-semibold text-slate-400 hover:bg-slate-800 hover:text-white flex items-center gap-2";
+                setTimeout(() => document.getElementById('scan_inbound_input')?.focus(), 100);
+            }
+        }
+
+        function switchHistorySubTab(subTab) {
+            switchTab('history');
+            currentHistoryTab = subTab;
+            const subInbound = document.getElementById('sub-hist-inbound');
+            const subOutbound = document.getElementById('sub-hist-outbound');
+            const badge = document.getElementById('historySubTabBadge');
+
+            if (subTab === 'inbound') {
+                if (badge) badge.innerText = "INBOUND HISTORY";
+                if (subInbound) subInbound.className = "w-full text-left py-1.5 px-3 rounded text-xs font-semibold text-purple-300 hover:bg-slate-800 flex items-center gap-2";
+                if (subOutbound) subOutbound.className = "w-full text-left py-1.5 px-3 rounded text-xs font-semibold text-slate-400 hover:bg-slate-800 hover:text-white flex items-center gap-2";
+            } else {
+                if (badge) badge.innerText = "OUTBOUND HISTORY";
+                if (subOutbound) subOutbound.className = "w-full text-left py-1.5 px-3 rounded text-xs font-semibold text-purple-300 hover:bg-slate-800 flex items-center gap-2";
+                if (subInbound) subInbound.className = "w-full text-left py-1.5 px-3 rounded text-xs font-semibold text-slate-400 hover:bg-slate-800 hover:text-white flex items-center gap-2";
+            }
+            renderHistoryTable();
+        }
+
+        async function handleInboundSubmit(e) {
+            e.preventDefault();
+            const mat = document.getElementById('in_material').value.trim();
+            const desc = document.getElementById('in_description').value.trim();
+            const qty = parseFloat(document.getElementById('in_quantity').value);
+            const unit = document.getElementById('in_unit').value.trim();
+            const loc = document.getElementById('in_location').value.trim();
+            const customer = document.getElementById('in_customer').value;
+            const date = document.getElementById('in_date').value;
+            const timeStampNow = Date.now();
+            const itemId = 'INV-' + timeStampNow;
+
+            const allItems = window.inventoryData || [];
+
+            const existingLocItem = allItems.find(i => 
+                i.location && i.location.trim().toLowerCase() === loc.toLowerCase() && i.barcodeNo
+            );
+
+            let generatedBarcode = "";
+
+            if (existingLocItem) {
+                generatedBarcode = existingLocItem.barcodeNo;
+            } else {
+                let maxSeq = 0;
+                allItems.forEach(i => {
+                    if (i.barcodeNo && i.barcodeNo.startsWith('S-311-')) {
+                        const numPart = parseInt(i.barcodeNo.replace('S-311-', ''), 10);
+                        if (!isNaN(numPart) && numPart > maxSeq) {
+                            maxSeq = numPart;
+                        }
+                    }
+                });
+
+                const nextSeq = maxSeq + 1;
+                generatedBarcode = 'S-311-' + String(nextSeq).padStart(6, '0');
+            }
+
+            const newItem = {
+                material: mat,
+                description: desc,
+                quantity: qty,
+                unit: unit,
+                location: loc,
+                customer: customer,
+                barcodeNo: generatedBarcode,
+                barcode: generatedBarcode,
+                date: date,
+                timestamp: timeStampNow
+            };
+
+            if (window.isFirebaseConnected && window.db) {
+                try {
+                    const docRef = window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'inventory', itemId);
+                    await window.setDoc(docRef, newItem);
+                    showToast(`บันทึกสำเร็จ! (Barcode: ${generatedBarcode})`);
+                    document.getElementById('inboundForm').reset();
+                    const dateEl = document.getElementById('in_date');
+                    if (dateEl) dateEl.value = new Date().toISOString().split('T')[0];
+                } catch (err) {
+                    console.error("Save error:", err);
+                    showToast("บันทึกขัดข้อง", "error");
+                }
+            } else {
+                showToast("ยังไม่ได้เชื่อมต่อ Firebase (ใช้งานใน Local)", "error");
+            }
+        }
+
+        function handleScanInbound(e) {
+            if (e.key === 'Enter') {
+                const val = e.target.value.trim();
+                if (!val) return;
+                showToast(`สแกนรับเข้าเรียบร้อย: ${val}`);
+                e.target.value = '';
+            }
+        }
+
+        function handleScanOutbound(e) {
+            if (e.key === 'Enter') {
+                const searchKey = e.target.value.trim().toLowerCase();
+                if (!searchKey) return;
+
+                const allItems = window.inventoryData || [];
+
+                let matchedItems = allItems.filter(i => {
+                    const itemBarcodeNo = String(i.barcodeNo || '').trim().toLowerCase();
+                    const itemBarcode = String(i.barcode || '').trim().toLowerCase();
+                    const itemMaterial = String(i.material || '').trim().toLowerCase();
+
+                    return itemBarcodeNo === searchKey || 
+                           itemBarcode === searchKey || 
+                           itemMaterial === searchKey;
+                });
+
+                if (matchedItems.length === 0) {
+                    showToast(`ไม่พบข้อมูลสำหรับรหัส: ${e.target.value}`, "error");
+                    e.target.value = '';
+                    return;
+                }
+
+                currentOutboundItems = JSON.parse(JSON.stringify(matchedItems));
+                openOutboundModal(currentOutboundItems);
+                e.target.value = '';
+            }
+        }
+
+        function openOutboundModal(items) {
+            const container = document.getElementById('outboundItemsContainer');
+            if (!container) return;
+
+            container.innerHTML = items.map((item, idx) => `
+                <div class="bg-purple-50/60 p-4 rounded-2xl border border-purple-100 flex flex-wrap md:flex-nowrap items-center justify-between gap-4">
+                    <div class="flex-1 min-w-[120px]">
+                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">MATERIAL</p>
+                        <p class="text-sm font-bold text-purple-950">${item.material || '-'}</p>
+                    </div>
+                    <div class="flex-1 min-w-[160px]">
+                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">DESCRIPTION</p>
+                        <p class="text-xs font-bold text-slate-800">${item.description || '-'}</p>
+                    </div>
+                    <div class="w-28 text-center">
+                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">QUANTITY</p>
+                        <input type="number" step="any" min="0.01" max="${item.quantity}" id="out_qty_${idx}" value="${item.quantity}" class="w-full text-center py-1.5 px-2 bg-white border border-purple-300 rounded-lg text-xs font-extrabold text-purple-900 outline-none focus:ring-2 focus:ring-purple-500 shadow-sm mt-0.5">
+                    </div>
+                    <div class="w-16 text-center">
+                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">UNIT</p>
+                        <p class="text-xs font-bold text-slate-700">${item.unit || 'PC.'}</p>
+                    </div>
+                    <div class="w-24 text-right">
+                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">LOCATION</p>
+                        <p class="text-xs font-bold text-slate-800">${item.location || '-'}</p>
+                    </div>
+                </div>
+            `).join('');
+
+            document.getElementById('outbound_remark_input').value = '';
+            document.getElementById('outboundModal').classList.remove('hidden');
+        }
+
+        function closeOutboundModal() {
+            document.getElementById('outboundModal').classList.add('hidden');
+        }
+
+        async function confirmOutboundSubmit() {
+            const remarkInput = document.getElementById('outbound_remark_input').value.trim();
+            if (!remarkInput) {
+                alert("กรุณาระบุ REMARK ก่อนทำรายการเบิก!");
+                document.getElementById('outbound_remark_input').focus();
+                return;
+            }
+
+            if (!window.isFirebaseConnected || !window.db) {
+                showToast("ระบบยังไม่ได้เชื่อมต่อกับ Firebase", "error");
+                return;
+            }
+
+            try {
+                for (let idx = 0; idx < currentOutboundItems.length; idx++) {
+                    const item = currentOutboundItems[idx];
+                    const inputQtyEl = document.getElementById(`out_qty_${idx}`);
+                    const outQty = parseFloat(inputQtyEl ? inputQtyEl.value : item.quantity);
+
+                    if (isNaN(outQty) || outQty <= 0) continue;
+
+                    const newQty = item.quantity - outQty;
+                    const docRef = window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'inventory', item.id);
+
+                    if (newQty <= 0) {
+                        await window.deleteDoc(docRef);
+                    } else {
+                        await window.setDoc(docRef, { ...item, quantity: newQty });
+                    }
+
+                    const outId = 'OUT-' + Date.now() + '-' + idx;
+                    const outDocRef = window.doc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'outbound_history', outId));
+                    await window.setDoc(outDocRef, {
+                        material: item.material || '',
+                        description: item.description || '',
+                        quantity: outQty,
+                        unit: item.unit || '',
+                        location: item.location || '',
+                        customer: item.customer || '',
+                        barcodeNo: item.barcodeNo || item.barcode || '',
+                        date: new Date().toISOString().split('T')[0],
+                        remark: remarkInput,
+                        timestamp: Date.now()
+                    });
+                }
+
+                showToast("บันทึกการเบิกจ่ายสินค้าเรียบร้อยแล้ว!");
+                closeOutboundModal();
+            } catch (err) {
+                console.error("Outbound Submit Error:", err);
+                showToast("เกิดข้อผิดพลาดในการทำรายการ", "error");
+            }
+        }
+
+        function renderOutboundFifoList() {
+            const container = document.getElementById('outbound_fifo_list');
+            if (!container) return;
+            let data = [...(window.inventoryData || [])];
+
+            data.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+
+            if (data.length === 0) {
+                container.innerHTML = `<div class="text-center py-6 text-slate-400 text-xs">ไม่มีรายการสินค้าในคลัง</div>`;
+                return;
+            }
+
+            container.innerHTML = data.slice(0, 5).map((item, idx) => `
+                <div class="flex items-center justify-between p-3 bg-slate-50 border border-slate-200 rounded-xl">
+                    <div class="flex items-center gap-3">
+                        <span class="w-6 h-6 bg-purple-100 text-purple-700 rounded-full flex items-center justify-center font-bold text-xs">${idx + 1}</span>
+                        <div>
+                            <p class="font-bold text-xs text-purple-950">${item.material || '-'} <span class="text-slate-500 font-normal">(${item.description || '-'})</span></p>
+                            <p class="text-[11px] text-slate-400">LOC: ${item.location || '-'} | BARCODE: <span class="font-bold text-purple-700">${item.barcodeNo || item.barcode || '-'}</span></p>
+                        </div>
+                    </div>
+                    <div class="font-bold text-xs text-slate-800">${item.quantity || 0} <span class="text-slate-500 font-normal text-[10px]">${item.unit || ''}</span></div>
+                </div>
+            `).join('');
+        }
+
+        function getFilteredDashboardData() {
+            let data = [...(window.inventoryData || [])];
+
+            data.sort((a, b) => {
+                const timeA = a.timestamp || (a.date ? new Date(a.date).getTime() : 0);
+                const timeB = b.timestamp || (b.date ? new Date(b.date).getTime() : 0);
+                return timeA - timeB;
+            });
+
+            const searchKey = (document.getElementById('dash_search')?.value || '').toLowerCase().trim();
+            if (searchKey) {
+                data = data.filter(item => {
+                    const mat = String(item.material || '').toLowerCase();
+                    const desc = String(item.description || '').toLowerCase();
+                    return mat.includes(searchKey) || desc.includes(searchKey);
+                });
+            }
+
+            return data;
+        }
+
+        function renderDashboardTable() {
+            const tbody = document.getElementById('dash_inventory_tbody');
+            if (!tbody) return;
+
+            const data = getFilteredDashboardData();
+
+            if (data.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="text-center py-6 text-slate-400">ไม่พบรายการสินค้า</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = data.map(item => `
+                <tr class="hover:bg-purple-50 transition-colors">
+                    <td class="p-3 font-bold text-purple-950">${item.material || '-'}</td>
+                    <td class="p-3 font-medium text-slate-700">${item.description || '-'}</td>
+                    <td class="p-3 text-right font-bold text-purple-900">${item.quantity || 0}</td>
+                    <td class="p-3 text-slate-500">${item.unit || ''}</td>
+                    <td class="p-3 font-semibold text-slate-800">${item.location || '-'}</td>
+                    <td class="p-3 font-bold text-purple-800">${item.customer || 'SHARP'}</td>
+                    <td class="p-3 text-slate-500 font-mono">${item.date || '-'}</td>
+                </tr>
+            `).join('');
+        }
+
+        function exportDashboardCSV() {
+            const data = getFilteredDashboardData();
+
+            if (data.length === 0) {
+                alert("ไม่มีข้อมูลสำหรับส่งออก CSV");
+                return;
+            }
+
+            let csvContent = "data:text/csv;charset=utf-8,\uFEFF";
+            csvContent += "MATERIAL,DESCRIPTION,QUANTITY,UNIT,LOCATION,CUSTOMER,DATE\n";
+
+            data.forEach(i => {
+                csvContent += `"${i.material || ''}","${i.description || ''}","${i.quantity || 0}","${i.unit || ''}","${i.location || ''}","${i.customer || 'SHARP'}","${i.date || ''}"\n`;
+            });
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `supply_dashboard_fifo_${new Date().toISOString().split('T')[0]}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function renderHistoryTable() {
+            const tbody = document.getElementById('history_tbody');
+            if (!tbody) return;
+
+            const isInbound = currentHistoryTab === 'inbound';
+            const data = isInbound ? (window.inventoryData || []) : (window.outboundData || []);
+
+            if (data.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="8" class="text-center py-8 text-slate-400">ไม่มีประวัติการ${isInbound ? 'รับเข้า' : 'เบิกออก'}สำหรับ Supply</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = data.map(item => `
+                <tr class="hover:bg-purple-50 transition-colors">
+                    <td class="p-3 font-bold text-purple-950">${item.material || '-'}</td>
+                    <td class="p-3">${item.description || '-'}</td>
+                    <td class="p-3 text-right font-bold ${isInbound ? 'text-purple-700' : 'text-rose-600'}">
+                        ${isInbound ? '+' : '-'}${item.quantity || 0}
+                    </td>
+                    <td class="p-3">${item.unit || ''}</td>
+                    <td class="p-3 font-medium">${item.location || '-'}</td>
+                    <td class="p-3 font-bold text-purple-700">${item.customer || 'SHARP'}</td>
+                    <td class="p-3 text-slate-500">${item.date || '-'}</td>
+                    <td class="p-3 font-bold text-purple-900">${item.remark || '-'}</td>
+                </tr>
+            `).join('');
+        }
+
+        function exportHistoryCSV() {
+            const isInbound = currentHistoryTab === 'inbound';
+            const data = isInbound ? (window.inventoryData || []) : (window.outboundData || []);
+
+            if (data.length === 0) {
+                alert("ไม่มีข้อมูลสำหรับส่งออก CSV");
+                return;
+            }
+
+            let csvContent = "data:text/csv;charset=utf-8,\uFEFF";
+            csvContent += "MATERIAL,DESCRIPTION,QUANTITY,UNIT,LOCATION,CUSTOMER,DATE,REMARK\n";
+
+            data.forEach(i => {
+                csvContent += `"${i.material || ''}","${i.description || ''}","${i.quantity || 0}","${i.unit || ''}","${i.location || ''}","${i.customer || 'SHARP'}","${i.date || ''}","${i.remark || '-'}"\n`;
+            });
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `supply_${currentHistoryTab}_history.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function renderPrintTable() {
+            const tbody = document.getElementById('print_tbody');
+            if (!tbody) return;
+
+            const search = (document.getElementById('print_search')?.value || '').toLowerCase();
+            const data = (window.inventoryData || []).filter(item => {
+                const mat = String(item.material || '').toLowerCase();
+                const desc = String(item.description || '').toLowerCase();
+                const bc = String(item.barcodeNo || item.barcode || '').toLowerCase();
+                return mat.includes(search) || desc.includes(search) || bc.includes(search);
+            });
+
+            if (data.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="9" class="text-center py-6 text-slate-400">ไม่พบรายการสินค้า</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = data.map(item => `
+                <tr class="hover:bg-purple-50 transition-colors">
+                    <td class="p-3 text-center">
+                        <input type="checkbox" class="print-checkbox" value="${item.id}" ${selectedPrintItems.has(item.id) ? 'checked' : ''} onchange="togglePrintSelect('${item.id}', this.checked)">
+                    </td>
+                    <td class="p-3 font-bold text-purple-950">${item.material || '-'}</td>
+                    <td class="p-3">${item.description || '-'}</td>
+                    <td class="p-3 text-right font-semibold">${item.quantity || 0}</td>
+                    <td class="p-3">${item.unit || ''}</td>
+                    <td class="p-3 font-medium">${item.location || '-'}</td>
+                    <td class="p-3 font-bold text-purple-700">${item.barcodeNo || item.barcode || '-'}</td>
+                    <td class="p-3 font-bold text-slate-700">${item.customer || 'SHARP'}</td>
+                    <td class="p-3 text-slate-500">${item.date || '-'}</td>
+                </tr>
+            `).join('');
+            updateSelectedCount();
+        }
+
+        function togglePrintSelect(id, isChecked) {
+            if (isChecked) selectedPrintItems.add(id);
+            else selectedPrintItems.delete(id);
+            updateSelectedCount();
+        }
+
+        function toggleSelectAllPrint(master) {
+            const checkboxes = document.querySelectorAll('.print-checkbox');
+            checkboxes.forEach(cb => {
+                cb.checked = master.checked;
+                togglePrintSelect(cb.value, master.checked);
+            });
+        }
+
+        function updateSelectedCount() {
+            const countEl = document.getElementById('selected_count');
+            if (countEl) countEl.innerText = selectedPrintItems.size;
+        }
+
+        function printSelectedBarcodes() {
+            if (selectedPrintItems.size === 0) {
+                alert("กรุณาเลือกรายการสินค้าที่ต้องการพิมพ์บาร์โค้ด");
+                return;
+            }
+
+            const itemsToPrint = (window.inventoryData || []).filter(item => selectedPrintItems.has(item.id));
+            if (itemsToPrint.length === 0) return;
+
+            const groupedByLoc = {};
+            itemsToPrint.forEach(item => {
+                const locKey = (item.location || 'UNSPECIFIED').trim();
+                if (!groupedByLoc[locKey]) {
+                    groupedByLoc[locKey] = [];
+                }
+                groupedByLoc[locKey].push(item);
+            });
+
+            const locations = Object.keys(groupedByLoc);
+            const container = document.getElementById('printModalContent');
+            container.innerHTML = '';
+
+            document.getElementById('modalDocTitle').innerText = `ตัวอย่างก่อนพิมพ์ A4 BARCODE SUPPLY (${locations.length} Location / ${itemsToPrint.length} รายการ)`;
+
+            const today = new Date();
+            const datePrintedStr = `${today.getDate()}/${today.getMonth() + 1}/${today.getFullYear() + 543}`;
+
+            locations.forEach((loc, locIndex) => {
+                const locItems = groupedByLoc[loc];
+                const firstItem = locItems[0];
+                const barcodeVal = firstItem.barcodeNo || firstItem.barcode || `S-311-000001`;
+                const svgId = `a4_barcode_svg_${locIndex}`;
+
+                let totalQty = 0;
+                const rowsHtml = locItems.map((item, idx) => {
+                    totalQty += Number(item.quantity || 0);
+                    return `
+                        <tr>
+                            <td class="p-2.5 text-center border-r border-slate-900 font-semibold">${idx + 1}</td>
+                            <td class="p-2.5 border-r border-slate-900 font-bold">${item.material || '-'}</td>
+                            <td class="p-2.5 border-r border-slate-900 font-semibold">${item.description || '-'}</td>
+                            <td class="p-2.5 text-center border-r border-slate-900 font-bold">${item.quantity || 0}</td>
+                            <td class="p-2.5 text-center border-r border-slate-900">${item.unit || 'PC.'}</td>
+                            <td class="p-2.5 text-center"></td>
+                        </tr>
+                    `;
+                }).join('');
+
+                const pageHtml = `
+                    <div class="print-page bg-white text-slate-900 w-full max-w-[210mm] p-8 sm:p-12 shadow-2xl rounded-sm font-sans flex flex-col justify-between border border-slate-200">
+                        <div>
+                            <div class="flex justify-between items-start pb-4 border-b-2 border-slate-800">
+                                <div>
+                                    <h1 class="text-3xl font-black text-purple-950 tracking-tight flex items-center gap-2">
+                                        SUPPLY <span class="text-purple-700">${firstItem.customer || 'SHARP'}</span>
+                                    </h1>
+                                    <p class="text-sm font-bold text-slate-700 mt-2">
+                                        LOCATION: <span class="text-purple-900 font-black">${loc}</span>
+                                    </p>
+                                </div>
+                                <div class="text-center">
+                                    <svg id="${svgId}" class="max-h-16"></svg>
+                                </div>
+                            </div>
+
+                            <div class="text-right my-3">
+                                <span class="text-xs font-semibold text-slate-600">จำนวนทั้งหมด ${locItems.length} รายการ</span>
+                            </div>
+
+                            <table class="w-full text-xs text-left border-collapse border border-slate-900 mt-2">
+                                <thead>
+                                    <tr class="bg-slate-50 text-slate-900 font-bold border-b border-slate-900 uppercase">
+                                        <th class="p-2.5 border-r border-slate-900 text-center w-12">ลำดับ</th>
+                                        <th class="p-2.5 border-r border-slate-900">MATERIAL</th>
+                                        <th class="p-2.5 border-r border-slate-900">DESCRIPTION</th>
+                                        <th class="p-2.5 border-r border-slate-900 text-center w-24">QUANTITY</th>
+                                        <th class="p-2.5 border-r border-slate-900 text-center w-16">UNIT</th>
+                                        <th class="p-2.5 text-center w-20">OUT</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-900">${rowsHtml}</tbody>
+                                <tfoot>
+                                    <tr class="border-t-2 border-slate-900 font-bold bg-slate-50">
+                                        <td colspan="3" class="p-2.5 text-right border-r border-slate-900 uppercase tracking-wider">
+                                            รวมทั้งหมด (TOTAL):
+                                        </td>
+                                        <td class="p-2.5 text-center border-r border-slate-900">${totalQty}</td>
+                                        <td class="p-2.5 text-center border-r border-slate-900">-</td>
+                                        <td class="p-2.5 text-center"></td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+
+                        <div class="pt-3 border-t border-slate-400 flex justify-between items-center text-[10px] text-slate-600 font-bold uppercase tracking-wider mt-auto">
+                            <span>SYSTEM GENERATED DOC: SUPPLY WMS</span>
+                            <span>DATE PRINTED: ${datePrintedStr}</span>
+                        </div>
+                    </div>
+                `;
+
+                container.insertAdjacentHTML('beforeend', pageHtml);
+
+                setTimeout(() => {
+                    try {
+                        JsBarcode(`#${svgId}`, barcodeVal, {
+                            format: "CODE128",
+                            width: 1.8,
+                            height: 45,
+                            displayValue: true,
+                            fontSize: 12,
+                            margin: 0
+                        });
+                    } catch (err) {
+                        console.error("Barcode generation error:", err);
+                    }
+                }, 50);
+            });
+
+            document.getElementById('printPreviewModal').classList.remove('hidden');
+        }
+
+        function closePrintModal() {
+            document.getElementById('printPreviewModal').classList.add('hidden');
+        }
+
+        function printA4Document() {
+            window.print();
+        }
+
+        function showToast(msg, type = 'success') {
+            const toast = document.getElementById('toast');
+            const message = document.getElementById('toastMessage');
+            if (!toast) return;
+            message.innerText = msg;
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3000);
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const dateEl = document.getElementById('in_date');
+            if (dateEl) dateEl.value = new Date().toISOString().split('T')[0];
+        });
+    </script>
+</body>
+</html>
