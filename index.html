@@ -289,21 +289,21 @@
                                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                                     <div>
                                         <label class="block text-xs font-bold text-slate-700 uppercase mb-1.5 flex items-center gap-1.5">
-                                            SAP ID <span class="text-slate-400 text-[10px] font-normal">(ไม่จำเป็นต้องใส่)</span>
+                                            SAP ID <span class="text-slate-400 text-[10px] font-normal">(ใส่เลขSAP ID)</span>
                                         </label>
-                                        <input type="text" id="in_sap_id" placeholder="เช่น 1002345" class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-purple-500 outline-none text-sm bg-white shadow-sm">
+                                        <input type="text" id="in_sap_id" placeholder="1002345" class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-purple-500 outline-none text-sm bg-white shadow-sm">
                                     </div>
                                     <div>
                                         <label class="block text-xs font-bold text-slate-700 uppercase mb-1.5 flex items-center gap-1.5">
                                             MATERIAL / PART NO. <span class="text-rose-500">*</span>
                                         </label>
-                                        <input type="text" id="in_material" required placeholder="เช่น 30015349" class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-purple-500 outline-none text-sm bg-white shadow-sm">
+                                        <input type="text" id="in_material" required placeholder="30015349" class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-purple-500 outline-none text-sm bg-white shadow-sm">
                                     </div>
                                     <div>
                                         <label class="block text-xs font-bold text-slate-700 uppercase mb-1.5 flex items-center gap-1.5">
                                             DESCRIPTION <span class="text-rose-500">*</span>
                                         </label>
-                                        <input type="text" id="in_description" required placeholder="เช่น PPIPCN695JBWZ" class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-purple-500 outline-none text-sm bg-white shadow-sm">
+                                        <input type="text" id="in_description" required placeholder="PPIPCN695JBWZ" class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-purple-500 outline-none text-sm bg-white shadow-sm">
                                     </div>
                                 </div>
                             </div>
@@ -371,7 +371,7 @@
                         <h3 class="font-bold text-center text-slate-800 text-lg uppercase tracking-wide">
                             SCAN BARCODE (SUPPLY OUTBOUND)
                         </h3>
-                        <p class="text-xs text-center text-slate-500 -mt-6">รองรับการสแกน Barcode (เช่น S-311-XXXXXX), Material / Part No. หรือ SAP ID</p>
+                        <p class="text-xs text-center text-slate-500 -mt-6">สแกน Barcode (เช่น S-311-XXXXXX), Material / Part No. หรือ SAP ID</p>
                         
                         <div class="relative max-w-lg mx-auto">
                             <input type="text" id="scan_outbound_input" onkeypress="handleScanOutbound(event)" placeholder="สแกน Barcode (S-311-XXXXXX) หรือ Material / SAP ID" class="w-full text-center py-4 px-6 text-lg border-2 border-purple-500 rounded-xl focus:ring-4 focus:ring-purple-200 outline-none shadow-sm font-semibold">
