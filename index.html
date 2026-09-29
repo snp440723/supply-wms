@@ -155,7 +155,6 @@
                         </div>
                         <i id="arrow-inbound" class="fa-solid fa-chevron-down text-xs text-slate-400 transition-transform duration-200"></i>
                     </button>
-                    <!-- ซ่อน Submenu เป็นค่าเริ่มต้นโดยเพิ่ม class 'hidden' -->
                     <div id="subnav-inbound" class="pl-9 pr-2 py-1 space-y-1 bg-slate-950/40 rounded-b-lg hidden">
                         <button onclick="switchInboundSubMode('manual')" id="sub-inbound-manual" class="w-full text-left py-1.5 px-3 rounded text-xs font-semibold text-purple-300 hover:bg-slate-800 flex items-center gap-2">
                             <i class="fa-solid fa-caret-right text-purple-400"></i> MANUAL
@@ -187,7 +186,6 @@
                         </div>
                         <i id="arrow-history" class="fa-solid fa-chevron-down text-xs text-slate-400 transition-transform duration-200"></i>
                     </button>
-                    <!-- ซ่อน Submenu เป็นค่าเริ่มต้นโดยเพิ่ม class 'hidden' -->
                     <div id="subnav-history" class="pl-9 pr-2 py-1 space-y-1 bg-slate-950/40 rounded-b-lg hidden">
                         <button onclick="switchHistorySubTab('inbound')" id="sub-hist-inbound" class="w-full text-left py-1.5 px-3 rounded text-xs font-semibold text-purple-300 hover:bg-slate-800 flex items-center gap-2">
                             <i class="fa-solid fa-caret-right"></i> INBOUND HISTORY
@@ -360,6 +358,7 @@
                                     <th class="p-3 text-right">QUANTITY</th>
                                     <th class="p-3">UNIT</th>
                                     <th class="p-3">LOCATION</th>
+                                    <th class="p-3">BARCODE</th>
                                     <th class="p-3">CUSTOMER</th>
                                     <th class="p-3">DATE</th>
                                     <th class="p-3">REMARK</th>
@@ -400,6 +399,7 @@
                                     <th class="p-3 text-right">QUANTITY</th>
                                     <th class="p-3">UNIT</th>
                                     <th class="p-3">LOCATION</th>
+                                    <th class="p-3">BARCODE</th>
                                     <th class="p-3">CUSTOMER</th>
                                     <th class="p-3">DATE</th>
                                 </tr>
@@ -586,7 +586,6 @@
         let selectedPrintItems = new Set();
         let currentOutboundItems = [];
 
-        // ===== ฟังก์ชันควบคุมการซ่อน/แสดง เมนูย่อย (TOGGLE SUBMENU) =====
         function toggleSubMenu(menuId) {
             const subnav = document.getElementById(`subnav-${menuId}`);
             const arrow = document.getElementById(`arrow-${menuId}`);
@@ -603,7 +602,6 @@
                 }
             }
 
-            // เมื่อคลิกปุ่มหลักให้สลับหน้าตามหลัก
             switchTab(menuId);
         }
 
@@ -690,30 +688,24 @@
             const timeStampNow = Date.now();
             const itemId = 'INV-' + timeStampNow;
 
-            const allItems = window.inventoryData || [];
+            const allInvItems = window.inventoryData || [];
+            const allOutItems = window.outboundData || [];
 
-            const existingLocItem = allItems.find(i => 
-                i.location && i.location.trim().toLowerCase() === loc.toLowerCase() && i.barcodeNo
-            );
-
-            let generatedBarcode = "";
-
-            if (existingLocItem) {
-                generatedBarcode = existingLocItem.barcodeNo;
-            } else {
-                let maxSeq = 0;
-                allItems.forEach(i => {
-                    if (i.barcodeNo && i.barcodeNo.startsWith('S-311-')) {
-                        const numPart = parseInt(i.barcodeNo.replace('S-311-', ''), 10);
-                        if (!isNaN(numPart) && numPart > maxSeq) {
-                            maxSeq = numPart;
-                        }
+            let maxSeq = 0;
+            const checkBarcodeSeq = (bc) => {
+                if (bc && bc.startsWith('S-311-')) {
+                    const numPart = parseInt(bc.replace('S-311-', ''), 10);
+                    if (!isNaN(numPart) && numPart > maxSeq) {
+                        maxSeq = numPart;
                     }
-                });
+                }
+            };
 
-                const nextSeq = maxSeq + 1;
-                generatedBarcode = 'S-311-' + String(nextSeq).padStart(6, '0');
-            }
+            allInvItems.forEach(i => checkBarcodeSeq(i.barcodeNo || i.barcode));
+            allOutItems.forEach(i => checkBarcodeSeq(i.barcodeNo || i.barcode));
+
+            const nextSeq = maxSeq + 1;
+            const generatedBarcode = 'S-311-' + String(nextSeq).padStart(6, '0');
 
             const newItem = {
                 material: mat,
@@ -851,7 +843,7 @@
                     }
 
                     const outId = 'OUT-' + Date.now() + '-' + idx;
-                    const outDocRef = window.doc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'outbound_history', outId));
+                    const outDocRef = window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'outbound_history', outId);
                     await window.setDoc(outDocRef, {
                         material: item.material || '',
                         description: item.description || '',
@@ -928,7 +920,7 @@
             const data = getFilteredDashboardData();
 
             if (data.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="7" class="text-center py-6 text-slate-400">ไม่พบรายการสินค้า</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="8" class="text-center py-6 text-slate-400">ไม่พบรายการสินค้า</td></tr>`;
                 return;
             }
 
@@ -939,6 +931,7 @@
                     <td class="p-3 text-right font-bold text-purple-900">${item.quantity || 0}</td>
                     <td class="p-3 text-slate-500">${item.unit || ''}</td>
                     <td class="p-3 font-semibold text-slate-800">${item.location || '-'}</td>
+                    <td class="p-3 font-bold text-purple-700">${item.barcodeNo || item.barcode || '-'}</td>
                     <td class="p-3 font-bold text-purple-800">${item.customer || 'SHARP'}</td>
                     <td class="p-3 text-slate-500 font-mono">${item.date || '-'}</td>
                 </tr>
@@ -954,10 +947,10 @@
             }
 
             let csvContent = "data:text/csv;charset=utf-8,\uFEFF";
-            csvContent += "MATERIAL,DESCRIPTION,QUANTITY,UNIT,LOCATION,CUSTOMER,DATE\n";
+            csvContent += "MATERIAL,DESCRIPTION,QUANTITY,UNIT,LOCATION,BARCODE,CUSTOMER,DATE\n";
 
             data.forEach(i => {
-                csvContent += `"${i.material || ''}","${i.description || ''}","${i.quantity || 0}","${i.unit || ''}","${i.location || ''}","${i.customer || 'SHARP'}","${i.date || ''}"\n`;
+                csvContent += `"${i.material || ''}","${i.description || ''}","${i.quantity || 0}","${i.unit || ''}","${i.location || ''}","${i.barcodeNo || i.barcode || ''}","${i.customer || 'SHARP'}","${i.date || ''}"\n`;
             });
 
             const encodedUri = encodeURI(csvContent);
@@ -977,7 +970,7 @@
             const data = isInbound ? (window.inventoryData || []) : (window.outboundData || []);
 
             if (data.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="8" class="text-center py-8 text-slate-400">ไม่มีประวัติการ${isInbound ? 'รับเข้า' : 'เบิกออก'}สำหรับ Supply</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="9" class="text-center py-8 text-slate-400">ไม่มีประวัติการ${isInbound ? 'รับเข้า' : 'เบิกออก'}สำหรับ Supply</td></tr>`;
                 return;
             }
 
@@ -990,6 +983,7 @@
                     </td>
                     <td class="p-3">${item.unit || ''}</td>
                     <td class="p-3 font-medium">${item.location || '-'}</td>
+                    <td class="p-3 font-bold text-purple-700">${item.barcodeNo || item.barcode || '-'}</td>
                     <td class="p-3 font-bold text-purple-700">${item.customer || 'SHARP'}</td>
                     <td class="p-3 text-slate-500">${item.date || '-'}</td>
                     <td class="p-3 font-bold text-purple-900">${item.remark || '-'}</td>
@@ -1007,10 +1001,10 @@
             }
 
             let csvContent = "data:text/csv;charset=utf-8,\uFEFF";
-            csvContent += "MATERIAL,DESCRIPTION,QUANTITY,UNIT,LOCATION,CUSTOMER,DATE,REMARK\n";
+            csvContent += "MATERIAL,DESCRIPTION,QUANTITY,UNIT,LOCATION,BARCODE,CUSTOMER,DATE,REMARK\n";
 
             data.forEach(i => {
-                csvContent += `"${i.material || ''}","${i.description || ''}","${i.quantity || 0}","${i.unit || ''}","${i.location || ''}","${i.customer || 'SHARP'}","${i.date || ''}","${i.remark || '-'}"\n`;
+                csvContent += `"${i.material || ''}","${i.description || ''}","${i.quantity || 0}","${i.unit || ''}","${i.location || ''}","${i.barcodeNo || i.barcode || ''}","${i.customer || 'SHARP'}","${i.date || ''}","${i.remark || '-'}"\n`;
             });
 
             const encodedUri = encodeURI(csvContent);
@@ -1085,44 +1079,17 @@
             const itemsToPrint = (window.inventoryData || []).filter(item => selectedPrintItems.has(item.id));
             if (itemsToPrint.length === 0) return;
 
-            const groupedByLoc = {};
-            itemsToPrint.forEach(item => {
-                const locKey = (item.location || 'UNSPECIFIED').trim();
-                if (!groupedByLoc[locKey]) {
-                    groupedByLoc[locKey] = [];
-                }
-                groupedByLoc[locKey].push(item);
-            });
-
-            const locations = Object.keys(groupedByLoc);
             const container = document.getElementById('printModalContent');
             container.innerHTML = '';
 
-            document.getElementById('modalDocTitle').innerText = `ตัวอย่างก่อนพิมพ์ A4 BARCODE SUPPLY (${locations.length} Location / ${itemsToPrint.length} รายการ)`;
+            document.getElementById('modalDocTitle').innerText = `ตัวอย่างก่อนพิมพ์ A4 BARCODE SUPPLY (${itemsToPrint.length} รายการ)`;
 
             const today = new Date();
             const datePrintedStr = `${today.getDate()}/${today.getMonth() + 1}/${today.getFullYear() + 543}`;
 
-            locations.forEach((loc, locIndex) => {
-                const locItems = groupedByLoc[loc];
-                const firstItem = locItems[0];
-                const barcodeVal = firstItem.barcodeNo || firstItem.barcode || `S-311-000001`;
-                const svgId = `a4_barcode_svg_${locIndex}`;
-
-                let totalQty = 0;
-                const rowsHtml = locItems.map((item, idx) => {
-                    totalQty += Number(item.quantity || 0);
-                    return `
-                        <tr>
-                            <td class="p-2.5 text-center border-r border-slate-900 font-semibold">${idx + 1}</td>
-                            <td class="p-2.5 border-r border-slate-900 font-bold">${item.material || '-'}</td>
-                            <td class="p-2.5 border-r border-slate-900 font-semibold">${item.description || '-'}</td>
-                            <td class="p-2.5 text-center border-r border-slate-900 font-bold">${item.quantity || 0}</td>
-                            <td class="p-2.5 text-center border-r border-slate-900">${item.unit || 'PC.'}</td>
-                            <td class="p-2.5 text-center"></td>
-                        </tr>
-                    `;
-                }).join('');
+            itemsToPrint.forEach((item, itemIndex) => {
+                const barcodeVal = item.barcodeNo || item.barcode || `S-311-000001`;
+                const svgId = `a4_barcode_svg_${itemIndex}`;
 
                 const pageHtml = `
                     <div class="print-page bg-white text-slate-900 w-full max-w-[210mm] p-8 sm:p-12 shadow-2xl rounded-sm font-sans flex flex-col justify-between border border-slate-200">
@@ -1130,10 +1097,10 @@
                             <div class="flex justify-between items-start pb-4 border-b-2 border-slate-800">
                                 <div>
                                     <h1 class="text-3xl font-black text-purple-950 tracking-tight flex items-center gap-2">
-                                        SUPPLY <span class="text-purple-700">${firstItem.customer || 'SHARP'}</span>
+                                        SUPPLY <span class="text-purple-700">${item.customer || 'SHARP'}</span>
                                     </h1>
                                     <p class="text-sm font-bold text-slate-700 mt-2">
-                                        LOCATION: <span class="text-purple-900 font-black">${loc}</span>
+                                        LOCATION: <span class="text-purple-900 font-black">${item.location || '-'}</span>
                                     </p>
                                 </div>
                                 <div class="text-center">
@@ -1142,7 +1109,7 @@
                             </div>
 
                             <div class="text-right my-3">
-                                <span class="text-xs font-semibold text-slate-600">จำนวนทั้งหมด ${locItems.length} รายการ</span>
+                                <span class="text-xs font-semibold text-slate-600">จำนวนทั้งหมด 1 รายการ</span>
                             </div>
 
                             <table class="w-full text-xs text-left border-collapse border border-slate-900 mt-2">
@@ -1156,13 +1123,22 @@
                                         <th class="p-2.5 text-center w-20">OUT</th>
                                     </tr>
                                 </thead>
-                                <tbody class="divide-y divide-slate-900">${rowsHtml}</tbody>
+                                <tbody class="divide-y divide-slate-900">
+                                    <tr>
+                                        <td class="p-2.5 text-center border-r border-slate-900 font-semibold">1</td>
+                                        <td class="p-2.5 border-r border-slate-900 font-bold">${item.material || '-'}</td>
+                                        <td class="p-2.5 border-r border-slate-900 font-semibold">${item.description || '-'}</td>
+                                        <td class="p-2.5 text-center border-r border-slate-900 font-bold">${item.quantity || 0}</td>
+                                        <td class="p-2.5 text-center border-r border-slate-900">${item.unit || 'PC.'}</td>
+                                        <td class="p-2.5 text-center"></td>
+                                    </tr>
+                                </tbody>
                                 <tfoot>
                                     <tr class="border-t-2 border-slate-900 font-bold bg-slate-50">
                                         <td colspan="3" class="p-2.5 text-right border-r border-slate-900 uppercase tracking-wider">
                                             รวมทั้งหมด (TOTAL):
                                         </td>
-                                        <td class="p-2.5 text-center border-r border-slate-900">${totalQty}</td>
+                                        <td class="p-2.5 text-center border-r border-slate-900">${item.quantity || 0}</td>
                                         <td class="p-2.5 text-center border-r border-slate-900">-</td>
                                         <td class="p-2.5 text-center"></td>
                                     </tr>
