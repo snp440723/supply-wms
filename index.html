@@ -50,7 +50,7 @@
             background: #94a3b8;
         }
 
-        /* CSS สั่งพิมพ์ A4 */
+        /* CSS สำหรับสั่งพิมพ์เอกสาร A4 */
         @media print {
             body * {
                 visibility: hidden !important;
@@ -120,391 +120,347 @@
 </head>
 <body class="bg-slate-100 font-sans min-h-screen text-slate-800 flex flex-col md:flex-row">
 
-    <!-- LOGIN MODAL -->
-    <div id="loginModal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl max-w-md w-full p-8 shadow-2xl border border-purple-100 space-y-6">
-            <div class="text-center space-y-2">
-                <div class="bg-purple-600 text-white p-3 rounded-2xl font-bold text-3xl inline-flex items-center justify-center w-16 h-16 shadow-lg mb-2">
-                    <i class="fa-solid fa-boxes-packing"></i>
+    <!-- Sidebar Navigation -->
+    <aside class="w-full md:w-64 bg-slate-900 text-white flex-shrink-0 flex flex-col justify-between shadow-xl z-20">
+        <div>
+            <!-- App Header -->
+            <div class="p-4 border-b border-slate-800 flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <div class="bg-purple-600 text-white p-2 rounded-lg font-bold text-xl flex items-center justify-center w-10 h-10 shadow-lg">
+                        <i class="fa-solid fa-boxes-packing"></i>
+                    </div>
+                    <div>
+                        <h1 class="font-bold text-lg leading-tight tracking-wide text-white">SUPPLY WMS</h1>
+                        <p class="text-xs text-purple-300">Supply Inventory System</p>
+                    </div>
                 </div>
-                <h2 class="text-2xl font-black text-slate-800 tracking-tight">SUPPLY WMS</h2>
-                <p class="text-xs text-slate-500 font-medium">กรุณาเข้าสู่ระบบเพื่อใช้งาน</p>
             </div>
 
-            <form onsubmit="handleLoginSubmit(event)" class="space-y-4">
+            <!-- Module Header Badge -->
+            <div class="p-3 border-b border-slate-800 bg-purple-950/40 flex items-center justify-between">
+                <span class="text-xs font-bold text-purple-200 tracking-wider flex items-center gap-2">
+                    <span id="cloudStatusDot" class="w-2.5 h-2.5 bg-purple-400 rounded-full animate-pulse"></span>
+                    SUPPLY MODULE
+                </span>
+                <span id="cloudStatusBadge" class="text-[10px] bg-purple-800 text-purple-100 px-2 py-0.5 rounded font-mono font-semibold">CONNECTING</span>
+            </div>
+
+            <nav class="p-3 space-y-1">
+                <!-- 1. INBOUND MENU WITH ACCORDION -->
                 <div>
-                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1">USERNAME</label>
-                    <div class="relative">
-                        <i class="fa-solid fa-user absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
-                        <input type="text" id="login_user" required placeholder="ป้อน Username" class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-purple-500 outline-none text-sm font-semibold">
+                    <button onclick="toggleSubMenu('inbound')" id="nav-inbound" class="w-full flex items-center justify-between px-4 py-3 rounded-lg font-medium text-sm transition-colors text-slate-300 hover:bg-slate-800 hover:text-white">
+                        <div class="flex items-center space-x-3">
+                            <i class="fa-solid fa-truck-ramp-box w-5 text-purple-400"></i>
+                            <span>INBOUND (รับเข้า)</span>
+                        </div>
+                        <i id="arrow-inbound" class="fa-solid fa-chevron-down text-xs text-slate-400 transition-transform duration-200"></i>
+                    </button>
+                    <div id="subnav-inbound" class="pl-9 pr-2 py-1 space-y-1 bg-slate-950/40 rounded-b-lg hidden">
+                        <button onclick="switchInboundSubMode('manual')" id="sub-inbound-manual" class="w-full text-left py-1.5 px-3 rounded text-xs font-semibold text-purple-300 hover:bg-slate-800 flex items-center gap-2">
+                            <i class="fa-solid fa-caret-right text-purple-400"></i> MANUAL
+                        </button>
+                        <button onclick="switchInboundSubMode('scan')" id="sub-inbound-scan" class="w-full text-left py-1.5 px-3 rounded text-xs font-semibold text-slate-400 hover:bg-slate-800 hover:text-white flex items-center gap-2">
+                            <i class="fa-solid fa-caret-right text-slate-500"></i> SCAN
+                        </button>
                     </div>
                 </div>
 
-                <div>
-                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1">PASSWORD</label>
-                    <div class="relative">
-                        <i class="fa-solid fa-lock absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
-                        <input type="password" id="login_password" required placeholder="ป้อน Password" class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-purple-500 outline-none text-sm font-semibold">
-                    </div>
-                </div>
-
-                <div id="login_error" class="text-rose-500 text-xs font-bold text-center hidden">
-                    <i class="fa-solid fa-circle-exclamation mr-1"></i> ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง!
-                </div>
-
-                <button type="submit" class="w-full py-3 bg-purple-600 hover:bg-purple-700 text-white font-bold text-sm rounded-xl shadow-lg transition-all tracking-wide uppercase mt-2">
-                    LOG IN (เข้าสู่ระบบ)
+                <!-- 2. OUTBOUND MENU -->
+                <button onclick="switchTab('outbound')" id="nav-outbound" class="w-full flex items-center space-x-3 px-4 py-3 rounded-lg font-medium text-sm transition-colors text-slate-300 hover:bg-slate-800 hover:text-white">
+                    <i class="fa-solid fa-dolly w-5 text-amber-400"></i>
+                    <span>OUTBOUND (เบิกออก)</span>
                 </button>
-            </form>
+
+                <!-- 3. DASHBOARD MENU -->
+                <button onclick="switchTab('dashboard')" id="nav-dashboard" class="w-full flex items-center space-x-3 px-4 py-3 rounded-lg font-medium text-sm transition-colors text-slate-300 hover:bg-slate-800 hover:text-white">
+                    <i class="fa-solid fa-chart-pie w-5 text-sky-400"></i>
+                    <span>DASHBOARD</span>
+                </button>
+
+                <!-- 4. HISTORY MENU WITH ACCORDION -->
+                <div>
+                    <button onclick="toggleSubMenu('history')" id="nav-history" class="w-full flex items-center justify-between px-4 py-3 rounded-lg font-medium text-sm transition-colors text-slate-300 hover:bg-slate-800 hover:text-white">
+                        <div class="flex items-center space-x-3">
+                            <i class="fa-solid fa-clock-rotate-left w-5 text-indigo-400"></i>
+                            <span>HISTORY (ประวัติ)</span>
+                        </div>
+                        <i id="arrow-history" class="fa-solid fa-chevron-down text-xs text-slate-400 transition-transform duration-200"></i>
+                    </button>
+                    <div id="subnav-history" class="pl-9 pr-2 py-1 space-y-1 bg-slate-950/40 rounded-b-lg hidden">
+                        <button onclick="switchHistorySubTab('inbound')" id="sub-hist-inbound" class="w-full text-left py-1.5 px-3 rounded text-xs font-semibold text-purple-300 hover:bg-slate-800 flex items-center gap-2">
+                            <i class="fa-solid fa-caret-right"></i> INBOUND HISTORY
+                        </button>
+                        <button onclick="switchHistorySubTab('outbound')" id="sub-hist-outbound" class="w-full text-left py-1.5 px-3 rounded text-xs font-semibold text-slate-400 hover:bg-slate-800 hover:text-white flex items-center gap-2">
+                            <i class="fa-solid fa-caret-right"></i> OUTBOUND HISTORY
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 5. PRINT MENU -->
+                <button onclick="switchTab('print')" id="nav-print" class="w-full flex items-center space-x-3 px-4 py-3 rounded-lg font-medium text-sm transition-colors text-slate-300 hover:bg-slate-800 hover:text-white">
+                    <i class="fa-solid fa-qrcode w-5 text-purple-400"></i>
+                    <span>PRINT (พิมพ์บาร์โค้ด)</span>
+                </button>
+            </nav>
         </div>
-    </div>
 
-    <!-- MAIN APP CONTENT (Hidden by default until logged in) -->
-    <div id="appContainer" class="flex flex-col md:flex-row w-full min-h-screen hidden">
-        <!-- Sidebar Navigation -->
-        <aside class="w-full md:w-64 bg-slate-900 text-white flex-shrink-0 flex flex-col justify-between shadow-xl z-20">
+        <div class="p-4 border-t border-slate-800 text-xs text-slate-500 text-center">
+            <p class="font-bold text-purple-300">SUPPLY MODULE</p>
+            <p class="mt-1">Supply Stock Control v2.5</p>
+        </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 flex flex-col min-w-0 overflow-y-auto">
+        <header class="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between shadow-sm sticky top-0 z-10">
             <div>
-                <!-- App Header -->
-                <div class="p-4 border-b border-slate-800 flex items-center justify-between">
-                    <div class="flex items-center space-x-3">
-                        <div class="bg-purple-600 text-white p-2 rounded-lg font-bold text-xl flex items-center justify-center w-10 h-10 shadow-lg">
-                            <i class="fa-solid fa-boxes-packing"></i>
-                        </div>
-                        <div>
-                            <h1 class="font-bold text-lg leading-tight tracking-wide text-white">SUPPLY WMS</h1>
-                            <p class="text-xs text-purple-300">Supply Inventory System</p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Module Header Badge -->
-                <div class="p-3 border-b border-slate-800 bg-purple-950/40 flex items-center justify-between">
-                    <span class="text-xs font-bold text-purple-200 tracking-wider flex items-center gap-2">
-                        <span id="cloudStatusDot" class="w-2.5 h-2.5 bg-purple-400 rounded-full animate-pulse"></span>
-                        SUPPLY MODULE
-                    </span>
-                    <span id="cloudStatusBadge" class="text-[10px] bg-purple-800 text-purple-100 px-2 py-0.5 rounded font-mono font-semibold">CONNECTING</span>
-                </div>
-
-                <nav class="p-3 space-y-1">
-                    <!-- 1. INBOUND MENU WITH ACCORDION -->
-                    <div>
-                        <button onclick="toggleSubMenu('inbound')" id="nav-inbound" class="w-full flex items-center justify-between px-4 py-3 rounded-lg font-medium text-sm transition-colors text-slate-300 hover:bg-slate-800 hover:text-white">
-                            <div class="flex items-center space-x-3">
-                                <i class="fa-solid fa-truck-ramp-box w-5 text-purple-400"></i>
-                                <span>INBOUND (รับเข้า)</span>
-                            </div>
-                            <i id="arrow-inbound" class="fa-solid fa-chevron-down text-xs text-slate-400 transition-transform duration-200"></i>
-                        </button>
-                        <div id="subnav-inbound" class="pl-9 pr-2 py-1 space-y-1 bg-slate-950/40 rounded-b-lg hidden">
-                            <button onclick="switchInboundSubMode('manual')" id="sub-inbound-manual" class="w-full text-left py-1.5 px-3 rounded text-xs font-semibold text-purple-300 hover:bg-slate-800 flex items-center gap-2">
-                                <i class="fa-solid fa-caret-right text-purple-400"></i> MANUAL
-                            </button>
-                            <button onclick="switchInboundSubMode('scan')" id="sub-inbound-scan" class="w-full text-left py-1.5 px-3 rounded text-xs font-semibold text-slate-400 hover:bg-slate-800 hover:text-white flex items-center gap-2">
-                                <i class="fa-solid fa-caret-right text-slate-500"></i> SCAN
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- 2. OUTBOUND MENU -->
-                    <button onclick="switchTab('outbound')" id="nav-outbound" class="w-full flex items-center space-x-3 px-4 py-3 rounded-lg font-medium text-sm transition-colors text-slate-300 hover:bg-slate-800 hover:text-white">
-                        <i class="fa-solid fa-dolly w-5 text-amber-400"></i>
-                        <span>OUTBOUND (เบิกออก)</span>
-                    </button>
-
-                    <!-- 3. DASHBOARD MENU -->
-                    <button onclick="switchTab('dashboard')" id="nav-dashboard" class="w-full flex items-center space-x-3 px-4 py-3 rounded-lg font-medium text-sm transition-colors text-slate-300 hover:bg-slate-800 hover:text-white">
-                        <i class="fa-solid fa-chart-pie w-5 text-sky-400"></i>
-                        <span>DASHBOARD</span>
-                    </button>
-
-                    <!-- 4. HISTORY MENU WITH ACCORDION -->
-                    <div>
-                        <button onclick="toggleSubMenu('history')" id="nav-history" class="w-full flex items-center justify-between px-4 py-3 rounded-lg font-medium text-sm transition-colors text-slate-300 hover:bg-slate-800 hover:text-white">
-                            <div class="flex items-center space-x-3">
-                                <i class="fa-solid fa-clock-rotate-left w-5 text-indigo-400"></i>
-                                <span>HISTORY (ประวัติ)</span>
-                            </div>
-                            <i id="arrow-history" class="fa-solid fa-chevron-down text-xs text-slate-400 transition-transform duration-200"></i>
-                        </button>
-                        <div id="subnav-history" class="pl-9 pr-2 py-1 space-y-1 bg-slate-950/40 rounded-b-lg hidden">
-                            <button onclick="switchHistorySubTab('inbound')" id="sub-hist-inbound" class="w-full text-left py-1.5 px-3 rounded text-xs font-semibold text-purple-300 hover:bg-slate-800 flex items-center gap-2">
-                                <i class="fa-solid fa-caret-right"></i> INBOUND HISTORY
-                            </button>
-                            <button onclick="switchHistorySubTab('outbound')" id="sub-hist-outbound" class="w-full text-left py-1.5 px-3 rounded text-xs font-semibold text-slate-400 hover:bg-slate-800 hover:text-white flex items-center gap-2">
-                                <i class="fa-solid fa-caret-right"></i> OUTBOUND HISTORY
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- 5. PRINT MENU -->
-                    <button onclick="switchTab('print')" id="nav-print" class="w-full flex items-center space-x-3 px-4 py-3 rounded-lg font-medium text-sm transition-colors text-slate-300 hover:bg-slate-800 hover:text-white">
-                        <i class="fa-solid fa-qrcode w-5 text-purple-400"></i>
-                        <span>PRINT (พิมพ์บาร์โค้ด)</span>
-                    </button>
-                </nav>
+                <h2 id="headerTitle" class="text-xl font-bold text-slate-800">SUPPLY - INBOUND (MANUAL)</h2>
+                <p id="headerSubtitle" class="text-xs text-slate-500">กรอกข้อมูลรับสินค้า Supply พร้อมระบุลูกค้า (Customer)</p>
             </div>
+        </header>
 
-            <div class="p-4 border-t border-slate-800 text-xs text-slate-500 text-center space-y-2">
-                <p class="font-bold text-purple-300">USER: PPIPE</p>
-                <button onclick="handleLogout()" class="w-full py-1.5 px-3 bg-rose-600/80 hover:bg-rose-600 text-white rounded font-semibold flex items-center justify-center gap-2 transition-colors">
-                    <i class="fa-solid fa-right-from-bracket"></i> LOGOUT
-                </button>
-                <p class="mt-1 text-[10px]">Supply Stock Control v2.5</p>
-            </div>
-        </aside>
+        <div class="p-4 md:p-6 space-y-6 flex-1">
+            <!-- 1. INBOUND PAGE -->
+            <section id="page-inbound" class="space-y-6">
+                <!-- MANUAL MODE -->
+                <div id="inbound-manual-container" class="max-w-4xl mx-auto bg-white rounded-2xl shadow-xl border border-purple-100 overflow-hidden">
+                    <div class="bg-gradient-to-r from-purple-900 via-purple-800 to-indigo-900 px-6 py-5 text-white flex justify-between items-center shadow-inner">
+                        <div class="flex items-center space-x-3">
+                            <div class="p-2.5 bg-purple-700/50 rounded-xl border border-purple-400/30 backdrop-blur-sm">
+                                <i class="fa-solid fa-boxes-packing text-purple-200 text-xl"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-lg tracking-wide flex items-center gap-2">
+                                    SUPPLY INBOUND <span class="text-purple-300 text-xs font-semibold px-2.5 py-0.5 bg-purple-950/60 rounded-full border border-purple-500/30">MANUAL MODE</span>
+                                </h3>
+                            </div>
+                        </div>
+                    </div>
 
-        <!-- Main Content Area -->
-        <main class="flex-1 flex flex-col min-w-0 overflow-y-auto">
-            <header class="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between shadow-sm sticky top-0 z-10">
-                <div>
-                    <h2 id="headerTitle" class="text-xl font-bold text-slate-800">SUPPLY - INBOUND (MANUAL)</h2>
-                    <p id="headerSubtitle" class="text-xs text-slate-500">กรอกข้อมูลรับสินค้า Supply พร้อมระบุลูกค้า (Customer)</p>
-                </div>
-            </header>
-
-            <div class="p-4 md:p-6 space-y-6 flex-1">
-                <!-- 1. INBOUND PAGE -->
-                <section id="page-inbound" class="space-y-6">
-                    <!-- MANUAL MODE -->
-                    <div id="inbound-manual-container" class="max-w-4xl mx-auto bg-white rounded-2xl shadow-xl border border-purple-100 overflow-hidden">
-                        <div class="bg-gradient-to-r from-purple-900 via-purple-800 to-indigo-900 px-6 py-5 text-white flex justify-between items-center shadow-inner">
-                            <div class="flex items-center space-x-3">
-                                <div class="p-2.5 bg-purple-700/50 rounded-xl border border-purple-400/30 backdrop-blur-sm">
-                                    <i class="fa-solid fa-boxes-packing text-purple-200 text-xl"></i>
+                    <form id="inboundForm" onsubmit="handleInboundSubmit(event)" class="p-6 md:p-8 space-y-6">
+                        <div class="bg-slate-50/80 p-5 rounded-xl border border-slate-200/80 space-y-4">
+                            <h4 class="text-xs font-bold uppercase tracking-wider text-purple-900 flex items-center gap-2 border-b border-slate-200 pb-2">
+                                <i class="fa-solid fa-circle-info text-purple-600"></i> ข้อมูลสินค้า (MATERIAL INFO)
+                            </h4>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div>
+                                    <!-- บังคับให้กรอก SAP ID โดยใส่ required และเครื่องหมายดอกจัน -->
+                                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1.5 flex items-center gap-1.5">
+                                        SAP ID <span class="text-rose-500">*</span>
+                                    </label>
+                                    <input type="text" id="in_sap_id" required placeholder="เช่น 60003237" class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-purple-500 outline-none text-sm bg-white shadow-sm font-semibold">
                                 </div>
                                 <div>
-                                    <h3 class="font-bold text-lg tracking-wide flex items-center gap-2">
-                                        SUPPLY INBOUND <span class="text-purple-300 text-xs font-semibold px-2.5 py-0.5 bg-purple-950/60 rounded-full border border-purple-500/30">MANUAL MODE</span>
-                                    </h3>
+                                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1.5 flex items-center gap-1.5">
+                                        MATERIAL / PART NO. <span class="text-rose-500">*</span>
+                                    </label>
+                                    <input type="text" id="in_material" required placeholder="เช่น DVLV-B885JBKZ" class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-purple-500 outline-none text-sm bg-white shadow-sm font-semibold">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1.5 flex items-center gap-1.5">
+                                        DESCRIPTION <span class="text-rose-500">*</span>
+                                    </label>
+                                    <input type="text" id="in_description" required placeholder="เช่น 3 WAY VALVE UNIT" class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-purple-500 outline-none text-sm bg-white shadow-sm">
                                 </div>
                             </div>
                         </div>
 
-                        <form id="inboundForm" onsubmit="handleInboundSubmit(event)" class="p-6 md:p-8 space-y-6">
-                            <div class="bg-slate-50/80 p-5 rounded-xl border border-slate-200/80 space-y-4">
-                                <h4 class="text-xs font-bold uppercase tracking-wider text-purple-900 flex items-center gap-2 border-b border-slate-200 pb-2">
-                                    <i class="fa-solid fa-circle-info text-purple-600"></i> ข้อมูลสินค้า (MATERIAL INFO)
-                                </h4>
-                                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                    <div>
-                                        <label class="block text-xs font-bold text-slate-700 uppercase mb-1.5 flex items-center gap-1.5">
-                                            SAP ID
-                                        </label>
-                                        <input type="text" id="in_sap_id" placeholder="เช่น 1002345" class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-purple-500 outline-none text-sm bg-white shadow-sm">
-                                    </div>
-                                    <div>
-                                        <label class="block text-xs font-bold text-slate-700 uppercase mb-1.5 flex items-center gap-1.5">
-                                            MATERIAL / PART NO. <span class="text-rose-500">*</span>
-                                        </label>
-                                        <input type="text" id="in_material" required placeholder="เช่น 30015349" class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-purple-500 outline-none text-sm bg-white shadow-sm">
-                                    </div>
-                                    <div>
-                                        <label class="block text-xs font-bold text-slate-700 uppercase mb-1.5 flex items-center gap-1.5">
-                                            DESCRIPTION <span class="text-rose-500">*</span>
-                                        </label>
-                                        <input type="text" id="in_description" required placeholder="เช่น PPIPCN695JBWZ" class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-purple-500 outline-none text-sm bg-white shadow-sm">
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="bg-slate-50/80 p-5 rounded-xl border border-slate-200/80 space-y-4">
-                                <h4 class="text-xs font-bold uppercase tracking-wider text-purple-900 flex items-center gap-2 border-b border-slate-200 pb-2">
-                                    <i class="fa-solid fa-warehouse text-purple-600"></i> จำนวนและสถานที่จัดเก็บ
-                                </h4>
-                                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                    <div>
-                                        <label class="block text-xs font-bold text-slate-700 uppercase mb-1.5">QUANTITY *</label>
-                                        <input type="number" step="any" min="0.01" id="in_quantity" required placeholder="จำนวน" class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-purple-500 outline-none text-sm bg-white font-semibold">
-                                    </div>
-                                    <div>
-                                        <label class="block text-xs font-bold text-slate-700 uppercase mb-1.5">UNIT *</label>
-                                        <input type="text" id="in_unit" required value="PC." class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-purple-500 outline-none text-sm bg-white">
-                                    </div>
-                                    <div>
-                                        <label class="block text-xs font-bold text-slate-700 uppercase mb-1.5">LOCATION *</label>
-                                        <input type="text" id="in_location" required placeholder="เช่น SH-02-01" class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-purple-500 outline-none text-sm bg-white font-semibold">
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="bg-slate-50/80 p-5 rounded-xl border border-slate-200/80 space-y-4">
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div>
-                                        <label class="block text-xs font-bold text-slate-700 uppercase mb-1.5">CUSTOMER</label>
-                                        <select id="in_customer" class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-purple-500 outline-none text-sm bg-white font-semibold">
-                                            <option value="SHARP">SHARP</option>
-                                            <option value="TORC">TORC</option>
-                                            <option value="ATLANTIC">ATLANTIC</option>
-                                            <option value="MCP">MCP</option>
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label class="block text-xs font-bold text-slate-700 uppercase mb-1.5">DATE *</label>
-                                        <input type="date" id="in_date" required class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-purple-500 outline-none text-sm bg-white font-semibold">
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="flex items-center justify-end gap-3 pt-2">
-                                <button type="submit" class="px-8 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs uppercase shadow-lg transition-all">
-                                    <i class="fa-solid fa-floppy-disk mr-1"></i> SAVE (บันทึกรับเข้า)
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-
-                    <!-- SCAN MODE -->
-                    <div id="inbound-scan-container" class="max-w-2xl mx-auto bg-white rounded-2xl shadow-xl border border-purple-100 p-8 hidden">
-                        <h3 class="font-bold text-center text-slate-800 text-lg uppercase mb-6 tracking-wide">
-                            SCAN QR-CODE / BARCODE (SUPPLY INBOUND)
-                        </h3>
-                        <div class="relative max-w-lg mx-auto">
-                            <input type="text" id="scan_inbound_input" onkeypress="handleScanInbound(event)" placeholder="สแกนหรือพิมพ์เพื่อนำเข้า" class="w-full text-center py-4 px-6 text-lg border-2 border-purple-500 rounded-xl focus:ring-4 focus:ring-purple-200 outline-none shadow-sm font-semibold">
-                        </div>
-                    </div>
-                </section>
-
-                <!-- 2. OUTBOUND PAGE -->
-                <section id="page-outbound" class="space-y-6 hidden">
-                    <div class="max-w-3xl mx-auto bg-white rounded-2xl shadow-xl border border-purple-100 p-8 space-y-8">
-                        <h3 class="font-bold text-center text-slate-800 text-lg uppercase tracking-wide">
-                            SCAN BARCODE (SUPPLY OUTBOUND)
-                        </h3>
-                        <p class="text-xs text-center text-slate-500 -mt-6">รองรับการสแกน Barcode (เช่น S-311-XXXXXX), Material / Part No. หรือ SAP ID</p>
-                        
-                        <div class="relative max-w-lg mx-auto">
-                            <input type="text" id="scan_outbound_input" onkeypress="handleScanOutbound(event)" placeholder="สแกน Barcode (S-311-XXXXXX) หรือ Material / SAP ID" class="w-full text-center py-4 px-6 text-lg border-2 border-purple-500 rounded-xl focus:ring-4 focus:ring-purple-200 outline-none shadow-sm font-semibold">
-                        </div>
-
-                        <div class="pt-4 border-t border-slate-100">
-                            <h4 class="font-bold text-xs text-slate-700 uppercase tracking-wider mb-4">
-                                รายการสินค้าในระบบล่าสุด (FIFO)
+                        <div class="bg-slate-50/80 p-5 rounded-xl border border-slate-200/80 space-y-4">
+                            <h4 class="text-xs font-bold uppercase tracking-wider text-purple-900 flex items-center gap-2 border-b border-slate-200 pb-2">
+                                <i class="fa-solid fa-warehouse text-purple-600"></i> จำนวนและสถานที่จัดเก็บ
                             </h4>
-                            <div id="outbound_fifo_list" class="space-y-3"></div>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- 3. HISTORY PAGE -->
-                <section id="page-history" class="space-y-6 hidden">
-                    <div class="bg-white rounded-2xl shadow-xl border border-slate-200 p-6 space-y-6">
-                        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-100 pb-4">
-                            <div class="flex items-center gap-3">
-                                <h3 class="font-bold text-slate-900 text-lg tracking-tight">SUPPLY HISTORY</h3>
-                                <span id="historySubTabBadge" class="bg-purple-100 text-purple-700 text-xs font-bold px-3 py-1 rounded-md uppercase">INBOUND HISTORY</span>
-                            </div>
-                            
-                            <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
-                                <div class="relative flex-1 sm:w-72">
-                                    <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
-                                    <input type="text" id="history_search" onkeyup="renderHistoryTable()" placeholder="ค้นหา SAP ID, Material, Description, Barcode, Remark..." class="w-full pl-9 pr-4 py-2 border border-slate-300 rounded-lg text-xs outline-none focus:ring-2 focus:ring-purple-500 shadow-sm">
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1.5">QUANTITY *</label>
+                                    <input type="number" step="any" min="0.01" id="in_quantity" required placeholder="จำนวน" class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-purple-500 outline-none text-sm bg-white font-semibold">
                                 </div>
-                                <button onclick="exportHistoryCSV()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-bold flex items-center justify-center gap-2 border border-slate-300 transition-all">
-                                    <i class="fa-solid fa-download"></i> Download CSV
-                                </button>
-                            </div>
-                        </div>
-
-                        <div class="overflow-x-auto">
-                            <table class="w-full text-left text-xs text-slate-700">
-                                <thead class="bg-purple-50 font-bold uppercase text-purple-900 border-y border-purple-100">
-                                    <tr>
-                                        <th class="p-3">SAP ID</th>
-                                        <th class="p-3">MATERIAL</th>
-                                        <th class="p-3">DESCRIPTION</th>
-                                        <th class="p-3 text-right">QUANTITY</th>
-                                        <th class="p-3">UNIT</th>
-                                        <th class="p-3">LOCATION</th>
-                                        <th class="p-3">BARCODE</th>
-                                        <th class="p-3">CUSTOMER</th>
-                                        <th class="p-3">DATE</th>
-                                        <th class="p-3">REMARK</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="history_tbody" class="divide-y divide-slate-100 font-medium"></tbody>
-                            </table>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- 4. DASHBOARD PAGE -->
-                <section id="page-dashboard" class="space-y-6 hidden">
-                    <div class="bg-white rounded-2xl shadow-xl border border-slate-200 p-6 space-y-6">
-                        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-100 pb-4">
-                            <div>
-                                <h3 class="font-bold text-slate-800 text-base uppercase">SUPPLY DASHBOARD</h3>
-                                <p class="text-xs text-slate-400 mt-0.5">เรียงลำดับสินค้าเข้าก่อน-ออกก่อน (FIFO)</p>
-                            </div>
-                            
-                            <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
-                                <div class="relative flex-1 sm:w-72">
-                                    <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
-                                    <input type="text" id="dash_search" onkeyup="renderDashboardTable()" placeholder="ค้นหา SAP ID, Material หรือ Description..." class="w-full pl-9 pr-4 py-2 border border-slate-300 rounded-lg text-xs outline-none focus:ring-2 focus:ring-purple-500 shadow-sm">
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1.5">UNIT *</label>
+                                    <input type="text" id="in_unit" required value="PC." class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-purple-500 outline-none text-sm bg-white">
                                 </div>
-                                <button onclick="exportDashboardCSV()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold flex items-center justify-center gap-2 shadow-md transition-all">
-                                    <i class="fa-solid fa-file-excel"></i> Download CSV
-                                </button>
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1.5">LOCATION *</label>
+                                    <input type="text" id="in_location" required placeholder="เช่น SH-01-01" class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-purple-500 outline-none text-sm bg-white font-semibold">
+                                </div>
                             </div>
                         </div>
 
-                        <div class="overflow-x-auto">
-                            <table class="w-full text-left text-xs text-slate-700">
-                                <thead class="bg-purple-50 font-bold uppercase text-purple-900 border-y border-purple-100">
-                                    <tr>
-                                        <th class="p-3">SAP ID</th>
-                                        <th class="p-3">MATERIAL</th>
-                                        <th class="p-3">DESCRIPTION</th>
-                                        <th class="p-3 text-right">QUANTITY</th>
-                                        <th class="p-3">UNIT</th>
-                                        <th class="p-3">LOCATION</th>
-                                        <th class="p-3">CUSTOMER</th>
-                                        <th class="p-3">DATE</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="dash_inventory_tbody" class="divide-y divide-slate-100 font-medium"></tbody>
-                            </table>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- 5. PRINT PAGE -->
-                <section id="page-print" class="space-y-6 hidden">
-                    <div class="bg-white rounded-2xl shadow-xl border border-slate-200 p-6 space-y-6">
-                        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-100 pb-4">
-                            <h3 class="font-bold text-slate-800 text-base uppercase">เลือกรายการพิมพ์ BARCODE SUPPLY (SELECT FOR PRINTING)</h3>
-                            <div class="flex items-center gap-3 w-full sm:w-auto">
-                                <input type="text" id="print_search" onkeyup="renderPrintTable()" placeholder="Search SAP ID / Material / Description / Barcode..." class="px-4 py-2 border border-slate-300 rounded-lg text-xs outline-none focus:ring-2 focus:ring-purple-500 w-full sm:w-64">
-                                <button onclick="printSelectedBarcodes()" class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-xs font-bold flex items-center gap-2 whitespace-nowrap shadow-md">
-                                    <i class="fa-solid fa-print"></i> พิมพ์ที่เลือก ( <span id="selected_count">0</span> )
-                                </button>
+                        <div class="bg-slate-50/80 p-5 rounded-xl border border-slate-200/80 space-y-4">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1.5">CUSTOMER</label>
+                                    <select id="in_customer" class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-purple-500 outline-none text-sm bg-white font-semibold">
+                                        <option value="SHARP">SHARP</option>
+                                        <option value="TORC">TORC</option>
+                                        <option value="ATLANTIC">ATLANTIC</option>
+                                        <option value="MCP">MCP</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1.5">DATE *</label>
+                                    <input type="date" id="in_date" required class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-purple-500 outline-none text-sm bg-white font-semibold">
+                                </div>
                             </div>
                         </div>
 
-                        <div class="overflow-x-auto">
-                            <table class="w-full text-left text-xs text-slate-700">
-                                <thead class="bg-purple-50 font-bold uppercase text-purple-900 border-y border-purple-100">
-                                    <tr>
-                                        <th class="p-3 w-10 text-center"><input type="checkbox" id="selectAllPrint" onclick="toggleSelectAllPrint(this)"></th>
-                                        <th class="p-3">SAP ID</th>
-                                        <th class="p-3">MATERIAL</th>
-                                        <th class="p-3">DESCRIPTION</th>
-                                        <th class="p-3 text-right">QUANTITY</th>
-                                        <th class="p-3">UNIT</th>
-                                        <th class="p-3">LOCATION</th>
-                                        <th class="p-3">BARCODE</th>
-                                        <th class="p-3">CUSTOMER</th>
-                                        <th class="p-3">DATE</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="print_tbody" class="divide-y divide-slate-100 font-medium"></tbody>
-                            </table>
+                        <div class="flex items-center justify-end gap-3 pt-2">
+                            <button type="submit" class="px-8 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs uppercase shadow-lg transition-all">
+                                <i class="fa-solid fa-floppy-disk mr-1"></i> SAVE (บันทึกรับเข้า)
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- SCAN MODE -->
+                <div id="inbound-scan-container" class="max-w-2xl mx-auto bg-white rounded-2xl shadow-xl border border-purple-100 p-8 hidden">
+                    <h3 class="font-bold text-center text-slate-800 text-lg uppercase mb-6 tracking-wide">
+                        SCAN QR-CODE / BARCODE (SUPPLY INBOUND)
+                    </h3>
+                    <div class="relative max-w-lg mx-auto">
+                        <input type="text" id="scan_inbound_input" onkeypress="handleScanInbound(event)" placeholder="สแกนหรือพิมพ์เพื่อนำเข้า" class="w-full text-center py-4 px-6 text-lg border-2 border-purple-500 rounded-xl focus:ring-4 focus:ring-purple-200 outline-none shadow-sm font-semibold">
+                    </div>
+                </div>
+            </section>
+
+            <!-- 2. OUTBOUND PAGE -->
+            <section id="page-outbound" class="space-y-6 hidden">
+                <div class="max-w-3xl mx-auto bg-white rounded-2xl shadow-xl border border-purple-100 p-8 space-y-8">
+                    <h3 class="font-bold text-center text-slate-800 text-lg uppercase tracking-wide">
+                        SCAN BARCODE (SUPPLY OUTBOUND)
+                    </h3>
+                    <p class="text-xs text-center text-slate-500 -mt-6">รองรับการสแกน Barcode (เช่น S-311-XXXXXX) หรือ Material / Part No.</p>
+                    
+                    <div class="relative max-w-lg mx-auto">
+                        <input type="text" id="scan_outbound_input" onkeypress="handleScanOutbound(event)" placeholder="สแกน Barcode (S-311-XXXXXX) หรือ Material No." class="w-full text-center py-4 px-6 text-lg border-2 border-purple-500 rounded-xl focus:ring-4 focus:ring-purple-200 outline-none shadow-sm font-semibold">
+                    </div>
+
+                    <div class="pt-4 border-t border-slate-100">
+                        <h4 class="font-bold text-xs text-slate-700 uppercase tracking-wider mb-4">
+                            รายการสินค้าในระบบล่าสุด (FIFO)
+                        </h4>
+                        <div id="outbound_fifo_list" class="space-y-3"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 3. HISTORY PAGE -->
+            <section id="page-history" class="space-y-6 hidden">
+                <div class="bg-white rounded-2xl shadow-xl border border-slate-200 p-6 space-y-6">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-100 pb-4">
+                        <div class="flex items-center gap-3">
+                            <h3 class="font-bold text-slate-900 text-lg tracking-tight">SUPPLY HISTORY</h3>
+                            <span id="historySubTabBadge" class="bg-purple-100 text-purple-700 text-xs font-bold px-3 py-1 rounded-md uppercase">INBOUND HISTORY</span>
+                        </div>
+                        
+                        <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
+                            <div class="relative flex-1 sm:w-72">
+                                <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                                <input type="text" id="history_search" onkeyup="renderHistoryTable()" placeholder="ค้นหา History (SAP ID / Material / Loc / Remark)..." class="w-full pl-9 pr-4 py-2 border border-slate-300 rounded-lg text-xs outline-none focus:ring-2 focus:ring-purple-500 shadow-sm">
+                            </div>
+                            <button onclick="exportHistoryCSV()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-bold flex items-center justify-center gap-2 border border-slate-300 transition-all shadow-sm">
+                                <i class="fa-solid fa-download"></i> Download CSV
+                            </button>
                         </div>
                     </div>
-                </section>
-            </div>
-        </main>
-    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs text-slate-700">
+                            <thead class="bg-purple-50 font-bold uppercase text-purple-900 border-y border-purple-100">
+                                <tr>
+                                    <th class="p-3">SAP ID</th>
+                                    <th class="p-3">MATERIAL</th>
+                                    <th class="p-3">DESCRIPTION</th>
+                                    <th class="p-3 text-right">QUANTITY</th>
+                                    <th class="p-3">UNIT</th>
+                                    <th class="p-3">LOCATION</th>
+                                    <th class="p-3">CUSTOMER</th>
+                                    <th class="p-3">DATE</th>
+                                    <th class="p-3">REMARK</th>
+                                </tr>
+                            </thead>
+                            <tbody id="history_tbody" class="divide-y divide-slate-100 font-medium"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 4. DASHBOARD PAGE -->
+            <section id="page-dashboard" class="space-y-6 hidden">
+                <div class="bg-white rounded-2xl shadow-xl border border-slate-200 p-6 space-y-6">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-100 pb-4">
+                        <div>
+                            <h3 class="font-bold text-slate-800 text-base uppercase">SUPPLY DASHBOARD</h3>
+                            <p class="text-xs text-slate-400 mt-0.5">เรียงลำดับสินค้าเข้าก่อน-ออกก่อน (FIFO)</p>
+                        </div>
+                        
+                        <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
+                            <div class="relative flex-1 sm:w-72">
+                                <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                                <input type="text" id="dash_search" onkeyup="renderDashboardTable()" placeholder="ค้นหา SAP ID / Material / Description..." class="w-full pl-9 pr-4 py-2 border border-slate-300 rounded-lg text-xs outline-none focus:ring-2 focus:ring-purple-500 shadow-sm">
+                            </div>
+                            <button onclick="exportDashboardCSV()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold flex items-center justify-center gap-2 shadow-md transition-all">
+                                <i class="fa-solid fa-file-excel"></i> Download CSV
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs text-slate-700">
+                            <thead class="bg-purple-50 font-bold uppercase text-purple-900 border-y border-purple-100">
+                                <tr>
+                                    <th class="p-3">SAP ID</th>
+                                    <th class="p-3">MATERIAL</th>
+                                    <th class="p-3">DESCRIPTION</th>
+                                    <th class="p-3 text-right">QUANTITY</th>
+                                    <th class="p-3">UNIT</th>
+                                    <th class="p-3">LOCATION</th>
+                                    <th class="p-3">BARCODE</th>
+                                    <th class="p-3">CUSTOMER</th>
+                                    <th class="p-3">DATE</th>
+                                </tr>
+                            </thead>
+                            <tbody id="dash_inventory_tbody" class="divide-y divide-slate-100 font-medium"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 5. PRINT PAGE -->
+            <section id="page-print" class="space-y-6 hidden">
+                <div class="bg-white rounded-2xl shadow-xl border border-slate-200 p-6 space-y-6">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-100 pb-4">
+                        <h3 class="font-bold text-slate-800 text-base uppercase">เลือกรายการพิมพ์ BARCODE SUPPLY (SELECT FOR PRINTING)</h3>
+                        <div class="flex items-center gap-3 w-full sm:w-auto">
+                            <input type="text" id="print_search" onkeyup="renderPrintTable()" placeholder="Search SAP ID / Material / Location / Barcode..." class="px-4 py-2 border border-slate-300 rounded-lg text-xs outline-none focus:ring-2 focus:ring-purple-500 w-full sm:w-80 shadow-sm">
+                            <button onclick="printSelectedBarcodes()" class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-xs font-bold flex items-center gap-2 whitespace-nowrap shadow-md">
+                                <i class="fa-solid fa-print"></i> พิมพ์ที่เลือก ( <span id="selected_count">0</span> )
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs text-slate-700">
+                            <thead class="bg-purple-50 font-bold uppercase text-purple-900 border-y border-purple-100">
+                                <tr>
+                                    <th class="p-3 w-10 text-center"><input type="checkbox" id="selectAllPrint" onclick="toggleSelectAllPrint(this)"></th>
+                                    <th class="p-3">SAP ID</th>
+                                    <th class="p-3">MATERIAL</th>
+                                    <th class="p-3">DESCRIPTION</th>
+                                    <th class="p-3 text-right">QUANTITY</th>
+                                    <th class="p-3">UNIT</th>
+                                    <th class="p-3">LOCATION</th>
+                                    <th class="p-3">BARCODE</th>
+                                    <th class="p-3">CUSTOMER</th>
+                                    <th class="p-3">DATE</th>
+                                </tr>
+                            </thead>
+                            <tbody id="print_tbody" class="divide-y divide-slate-100 font-medium"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
 
     <!-- OUTBOUND CONFIRMATION MODAL -->
     <div id="outboundModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
@@ -563,43 +519,6 @@
         <span id="toastMessage" class="text-xs font-semibold">บันทึกข้อมูลเรียบร้อยแล้ว</span>
     </div>
 
-    <!-- LOGIN FUNCTIONALITY -->
-    <script>
-        function handleLoginSubmit(e) {
-            e.preventDefault();
-            const user = document.getElementById('login_user').value.trim();
-            const pass = document.getElementById('login_password').value.trim();
-            const errEl = document.getElementById('login_error');
-
-            if (user === 'PPIPE' && pass === 'Pipe@B12') {
-                sessionStorage.setItem('supply_logged_in', 'true');
-                showAppUI();
-                errEl.classList.add('hidden');
-            } else {
-                errEl.classList.remove('hidden');
-            }
-        }
-
-        function showAppUI() {
-            document.getElementById('loginModal').classList.add('hidden');
-            document.getElementById('appContainer').classList.remove('hidden');
-        }
-
-        function handleLogout() {
-            sessionStorage.removeItem('supply_logged_in');
-            document.getElementById('appContainer').classList.add('hidden');
-            document.getElementById('loginModal').classList.remove('hidden');
-            document.getElementById('login_user').value = '';
-            document.getElementById('login_password').value = '';
-        }
-
-        document.addEventListener('DOMContentLoaded', () => {
-            if (sessionStorage.getItem('supply_logged_in') === 'true') {
-                showAppUI();
-            }
-        });
-    </script>
-
     <!-- FIREBASE MODULE LOADER -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-app.js";
@@ -619,7 +538,6 @@
         const appId = 'supply-wms';
         let db, auth;
         window.inventoryData = [];
-        window.inboundData = [];
         window.outboundData = [];
         window.isFirebaseConnected = false;
 
@@ -646,13 +564,6 @@
                 renderOutboundFifoList();
                 renderHistoryTable();
                 renderPrintTable();
-            });
-
-            // Listen to Firestore Inbound History
-            const inRef = collection(db, 'artifacts', appId, 'public', 'data', 'inbound_history');
-            onSnapshot(inRef, (snapshot) => {
-                window.inboundData = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-                renderHistoryTable();
             });
 
             // Listen to Firestore Outbound History
@@ -794,26 +705,31 @@
             const timeStampNow = Date.now();
             const itemId = 'INV-' + timeStampNow;
 
-            const allInvItems = window.inventoryData || [];
-            const allInItems = window.inboundData || [];
-            const allOutItems = window.outboundData || [];
+            const allItems = window.inventoryData || [];
 
-            let maxSeq = 0;
-            const checkBarcodeSeq = (bc) => {
-                if (bc && bc.startsWith('S-311-')) {
-                    const numPart = parseInt(bc.replace('S-311-', ''), 10);
-                    if (!isNaN(numPart) && numPart > maxSeq) {
-                        maxSeq = numPart;
+            const existingLocItem = allItems.find(i => 
+                i.location && i.location.trim().toLowerCase() === loc.toLowerCase() && (i.barcodeNo || i.barcode)
+            );
+
+            let generatedBarcode = "";
+
+            if (existingLocItem) {
+                generatedBarcode = existingLocItem.barcodeNo || existingLocItem.barcode;
+            } else {
+                let maxSeq = 0;
+                allItems.forEach(i => {
+                    const bc = i.barcodeNo || i.barcode || '';
+                    if (bc.startsWith('S-311-')) {
+                        const numPart = parseInt(bc.replace('S-311-', ''), 10);
+                        if (!isNaN(numPart) && numPart > maxSeq) {
+                            maxSeq = numPart;
+                        }
                     }
-                }
-            };
+                });
 
-            allInvItems.forEach(i => checkBarcodeSeq(i.barcodeNo || i.barcode));
-            allInItems.forEach(i => checkBarcodeSeq(i.barcodeNo || i.barcode));
-            allOutItems.forEach(i => checkBarcodeSeq(i.barcodeNo || i.barcode));
-
-            const nextSeq = maxSeq + 1;
-            const generatedBarcode = 'S-311-' + String(nextSeq).padStart(6, '0');
+                const nextSeq = maxSeq + 1;
+                generatedBarcode = 'S-311-' + String(nextSeq).padStart(6, '0');
+            }
 
             const newItem = {
                 sapId: sapId,
@@ -831,14 +747,8 @@
 
             if (window.isFirebaseConnected && window.db) {
                 try {
-                    // บันทึกลงคลังสินค้า (Inventory)
                     const docRef = window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'inventory', itemId);
                     await window.setDoc(docRef, newItem);
-
-                    // บันทึกเก็บเป็นประวัติรับเข้าสะสม (Inbound History)
-                    const inHistRef = window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'inbound_history', itemId);
-                    await window.setDoc(inHistRef, { ...newItem, remark: '-' });
-
                     showToast(`บันทึกสำเร็จ! (Barcode: ${generatedBarcode})`);
                     document.getElementById('inboundForm').reset();
                     const dateEl = document.getElementById('in_date');
@@ -877,7 +787,7 @@
                     return itemBarcodeNo === searchKey || 
                            itemBarcode === searchKey || 
                            itemMaterial === searchKey ||
-                           (itemSapId !== '' && itemSapId === searchKey);
+                           itemSapId === searchKey;
                 });
 
                 if (matchedItems.length === 0) {
@@ -898,9 +808,9 @@
 
             container.innerHTML = items.map((item, idx) => `
                 <div class="bg-purple-50/60 p-4 rounded-2xl border border-purple-100 flex flex-wrap md:flex-nowrap items-center justify-between gap-4">
-                    <div class="flex-1 min-w-[100px]">
+                    <div class="w-24">
                         <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">SAP ID</p>
-                        <p class="text-xs font-bold text-slate-700">${item.sapId || '-'}</p>
+                        <p class="text-xs font-bold text-purple-950">${item.sapId || '-'}</p>
                     </div>
                     <div class="flex-1 min-w-[120px]">
                         <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">MATERIAL</p>
@@ -1005,7 +915,7 @@
                     <div class="flex items-center gap-3">
                         <span class="w-6 h-6 bg-purple-100 text-purple-700 rounded-full flex items-center justify-center font-bold text-xs">${idx + 1}</span>
                         <div>
-                            <p class="font-bold text-xs text-purple-950">${item.material || '-'} ${item.sapId ? `<span class="text-slate-400 font-normal">[SAP: ${item.sapId}]</span>` : ''} <span class="text-slate-500 font-normal">(${item.description || '-'})</span></p>
+                            <p class="font-bold text-xs text-purple-950">${item.material || '-'} <span class="text-slate-500 font-normal">(${item.description || '-'})</span></p>
                             <p class="text-[11px] text-slate-400">LOC: ${item.location || '-'} | BARCODE: <span class="font-bold text-purple-700">${item.barcodeNo || item.barcode || '-'}</span></p>
                         </div>
                     </div>
@@ -1043,18 +953,19 @@
             const data = getFilteredDashboardData();
 
             if (data.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="8" class="text-center py-6 text-slate-400">ไม่พบรายการสินค้า</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="9" class="text-center py-6 text-slate-400">ไม่พบรายการสินค้า</td></tr>`;
                 return;
             }
 
             tbody.innerHTML = data.map(item => `
                 <tr class="hover:bg-purple-50 transition-colors">
-                    <td class="p-3 font-medium text-slate-600">${item.sapId || '-'}</td>
+                    <td class="p-3 font-semibold text-slate-600">${item.sapId || '-'}</td>
                     <td class="p-3 font-bold text-purple-950">${item.material || '-'}</td>
                     <td class="p-3 font-medium text-slate-700">${item.description || '-'}</td>
                     <td class="p-3 text-right font-bold text-purple-900">${item.quantity || 0}</td>
                     <td class="p-3 text-slate-500">${item.unit || ''}</td>
                     <td class="p-3 font-semibold text-slate-800">${item.location || '-'}</td>
+                    <td class="p-3 font-bold text-purple-700">${item.barcodeNo || item.barcode || '-'}</td>
                     <td class="p-3 font-bold text-purple-800">${item.customer || 'SHARP'}</td>
                     <td class="p-3 text-slate-500 font-mono">${item.date || '-'}</td>
                 </tr>
@@ -1070,10 +981,10 @@
             }
 
             let csvContent = "data:text/csv;charset=utf-8,\uFEFF";
-            csvContent += "SAP ID,MATERIAL,DESCRIPTION,QUANTITY,UNIT,LOCATION,CUSTOMER,DATE\n";
+            csvContent += "SAP ID,MATERIAL,DESCRIPTION,QUANTITY,UNIT,LOCATION,BARCODE,CUSTOMER,DATE\n";
 
             data.forEach(i => {
-                csvContent += `"${i.sapId || ''}","${i.material || ''}","${i.description || ''}","${i.quantity || 0}","${i.unit || ''}","${i.location || ''}","${i.customer || 'SHARP'}","${i.date || ''}"\n`;
+                csvContent += `"${i.sapId || ''}","${i.material || ''}","${i.description || ''}","${i.quantity || 0}","${i.unit || ''}","${i.location || ''}","${i.barcodeNo || i.barcode || ''}","${i.customer || 'SHARP'}","${i.date || ''}"\n`;
             });
 
             const encodedUri = encodeURI(csvContent);
@@ -1087,9 +998,7 @@
 
         function getFilteredHistoryData() {
             const isInbound = currentHistoryTab === 'inbound';
-            let data = isInbound ? [...(window.inboundData || [])] : [...(window.outboundData || [])];
-
-            data.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+            let data = isInbound ? [...(window.inventoryData || [])] : [...(window.outboundData || [])];
 
             const searchKey = (document.getElementById('history_search')?.value || '').toLowerCase().trim();
             if (searchKey) {
@@ -1097,18 +1006,10 @@
                     const sap = String(item.sapId || '').toLowerCase();
                     const mat = String(item.material || '').toLowerCase();
                     const desc = String(item.description || '').toLowerCase();
-                    const bc = String(item.barcodeNo || item.barcode || '').toLowerCase();
                     const loc = String(item.location || '').toLowerCase();
                     const cust = String(item.customer || '').toLowerCase();
                     const rmk = String(item.remark || '').toLowerCase();
-
-                    return sap.includes(searchKey) || 
-                           mat.includes(searchKey) || 
-                           desc.includes(searchKey) || 
-                           bc.includes(searchKey) || 
-                           loc.includes(searchKey) || 
-                           cust.includes(searchKey) || 
-                           rmk.includes(searchKey);
+                    return sap.includes(searchKey) || mat.includes(searchKey) || desc.includes(searchKey) || loc.includes(searchKey) || cust.includes(searchKey) || rmk.includes(searchKey);
                 });
             }
 
@@ -1123,13 +1024,13 @@
             const data = getFilteredHistoryData();
 
             if (data.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="10" class="text-center py-8 text-slate-400">ไม่พบประวัติการ${isInbound ? 'รับเข้า' : 'เบิกออก'}สำหรับ Supply</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="9" class="text-center py-8 text-slate-400">ไม่มีประวัติการ${isInbound ? 'รับเข้า' : 'เบิกออก'}สำหรับ Supply</td></tr>`;
                 return;
             }
 
             tbody.innerHTML = data.map(item => `
                 <tr class="hover:bg-purple-50 transition-colors">
-                    <td class="p-3 font-medium text-slate-600">${item.sapId || '-'}</td>
+                    <td class="p-3 font-semibold text-slate-600">${item.sapId || '-'}</td>
                     <td class="p-3 font-bold text-purple-950">${item.material || '-'}</td>
                     <td class="p-3">${item.description || '-'}</td>
                     <td class="p-3 text-right font-bold ${isInbound ? 'text-purple-700' : 'text-rose-600'}">
@@ -1137,9 +1038,8 @@
                     </td>
                     <td class="p-3">${item.unit || ''}</td>
                     <td class="p-3 font-medium">${item.location || '-'}</td>
-                    <td class="p-3 font-bold text-purple-700">${item.barcodeNo || item.barcode || '-'}</td>
                     <td class="p-3 font-bold text-purple-700">${item.customer || 'SHARP'}</td>
-                    <td class="p-3 text-slate-500">${item.date || '-'}</td>
+                    <td class="p-3 text-slate-500 font-mono">${item.date || '-'}</td>
                     <td class="p-3 font-bold text-purple-900">${item.remark || '-'}</td>
                 </tr>
             `).join('');
@@ -1154,10 +1054,10 @@
             }
 
             let csvContent = "data:text/csv;charset=utf-8,\uFEFF";
-            csvContent += "SAP ID,MATERIAL,DESCRIPTION,QUANTITY,UNIT,LOCATION,BARCODE,CUSTOMER,DATE,REMARK\n";
+            csvContent += "SAP ID,MATERIAL,DESCRIPTION,QUANTITY,UNIT,LOCATION,CUSTOMER,DATE,REMARK\n";
 
             data.forEach(i => {
-                csvContent += `"${i.sapId || ''}","${i.material || ''}","${i.description || ''}","${i.quantity || 0}","${i.unit || ''}","${i.location || ''}","${i.barcodeNo || i.barcode || ''}","${i.customer || 'SHARP'}","${i.date || ''}","${i.remark || '-'}"\n`;
+                csvContent += `"${i.sapId || ''}","${i.material || ''}","${i.description || ''}","${i.quantity || 0}","${i.unit || ''}","${i.location || ''}","${i.customer || 'SHARP'}","${i.date || ''}","${i.remark || '-'}"\n`;
             });
 
             const encodedUri = encodeURI(csvContent);
@@ -1173,13 +1073,21 @@
             const tbody = document.getElementById('print_tbody');
             if (!tbody) return;
 
-            const search = (document.getElementById('print_search')?.value || '').toLowerCase();
+            const search = (document.getElementById('print_search')?.value || '').toLowerCase().trim();
             const data = (window.inventoryData || []).filter(item => {
                 const sap = String(item.sapId || '').toLowerCase();
                 const mat = String(item.material || '').toLowerCase();
                 const desc = String(item.description || '').toLowerCase();
                 const bc = String(item.barcodeNo || item.barcode || '').toLowerCase();
-                return sap.includes(search) || mat.includes(search) || desc.includes(search) || bc.includes(search);
+                const loc = String(item.location || '').toLowerCase();
+                const cust = String(item.customer || '').toLowerCase();
+
+                return sap.includes(search) || 
+                       mat.includes(search) || 
+                       desc.includes(search) || 
+                       bc.includes(search) || 
+                       loc.includes(search) || 
+                       cust.includes(search);
             });
 
             if (data.length === 0) {
@@ -1192,12 +1100,12 @@
                     <td class="p-3 text-center">
                         <input type="checkbox" class="print-checkbox" value="${item.id}" ${selectedPrintItems.has(item.id) ? 'checked' : ''} onchange="togglePrintSelect('${item.id}', this.checked)">
                     </td>
-                    <td class="p-3 font-medium text-slate-600">${item.sapId || '-'}</td>
+                    <td class="p-3 font-semibold text-slate-600">${item.sapId || '-'}</td>
                     <td class="p-3 font-bold text-purple-950">${item.material || '-'}</td>
                     <td class="p-3">${item.description || '-'}</td>
                     <td class="p-3 text-right font-semibold">${item.quantity || 0}</td>
                     <td class="p-3">${item.unit || ''}</td>
-                    <td class="p-3 font-medium">${item.location || '-'}</td>
+                    <td class="p-3 font-medium text-purple-900 font-semibold">${item.location || '-'}</td>
                     <td class="p-3 font-bold text-purple-700">${item.barcodeNo || item.barcode || '-'}</td>
                     <td class="p-3 font-bold text-slate-700">${item.customer || 'SHARP'}</td>
                     <td class="p-3 text-slate-500">${item.date || '-'}</td>
@@ -1234,17 +1142,44 @@
             const itemsToPrint = (window.inventoryData || []).filter(item => selectedPrintItems.has(item.id));
             if (itemsToPrint.length === 0) return;
 
+            const groupedByLoc = {};
+            itemsToPrint.forEach(item => {
+                const locKey = (item.location || 'UNSPECIFIED').trim();
+                if (!groupedByLoc[locKey]) {
+                    groupedByLoc[locKey] = [];
+                }
+                groupedByLoc[locKey].push(item);
+            });
+
+            const locations = Object.keys(groupedByLoc);
             const container = document.getElementById('printModalContent');
             container.innerHTML = '';
 
-            document.getElementById('modalDocTitle').innerText = `ตัวอย่างก่อนพิมพ์ A4 BARCODE SUPPLY (${itemsToPrint.length} รายการ)`;
+            document.getElementById('modalDocTitle').innerText = `ตัวอย่างก่อนพิมพ์ A4 BARCODE SUPPLY (${locations.length} Location / ${itemsToPrint.length} รายการ)`;
 
             const today = new Date();
             const datePrintedStr = `${today.getDate()}/${today.getMonth() + 1}/${today.getFullYear() + 543}`;
 
-            itemsToPrint.forEach((item, itemIndex) => {
-                const barcodeVal = item.barcodeNo || item.barcode || `S-311-000001`;
-                const svgId = `a4_barcode_svg_${itemIndex}`;
+            locations.forEach((loc, locIndex) => {
+                const locItems = groupedByLoc[loc];
+                const firstItem = locItems[0];
+                const barcodeVal = firstItem.barcodeNo || firstItem.barcode || `S-311-000001`;
+                const svgId = `a4_barcode_svg_${locIndex}`;
+
+                let totalQty = 0;
+                const rowsHtml = locItems.map((item, idx) => {
+                    totalQty += Number(item.quantity || 0);
+                    return `
+                        <tr>
+                            <td class="p-2.5 text-center border-r border-slate-900 font-semibold">${idx + 1}</td>
+                            <td class="p-2.5 border-r border-slate-900 font-bold">${item.material || '-'}</td>
+                            <td class="p-2.5 border-r border-slate-900 font-semibold">${item.description || '-'}</td>
+                            <td class="p-2.5 text-center border-r border-slate-900 font-bold">${item.quantity || 0}</td>
+                            <td class="p-2.5 text-center border-r border-slate-900">${item.unit || 'PC.'}</td>
+                            <td class="p-2.5 text-center"></td>
+                        </tr>
+                    `;
+                }).join('');
 
                 const pageHtml = `
                     <div class="print-page bg-white text-slate-900 w-full max-w-[210mm] p-8 sm:p-12 shadow-2xl rounded-sm font-sans flex flex-col justify-between border border-slate-200">
@@ -1252,10 +1187,10 @@
                             <div class="flex justify-between items-start pb-4 border-b-2 border-slate-800">
                                 <div>
                                     <h1 class="text-3xl font-black text-purple-950 tracking-tight flex items-center gap-2">
-                                        SUPPLY <span class="text-purple-700">${item.customer || 'SHARP'}</span>
+                                        SUPPLY <span class="text-purple-700">${firstItem.customer || 'SHARP'}</span>
                                     </h1>
                                     <p class="text-sm font-bold text-slate-700 mt-2">
-                                        LOCATION: <span class="text-purple-900 font-black">${item.location || '-'}</span>
+                                        LOCATION: <span class="text-purple-900 font-black">${loc}</span>
                                     </p>
                                 </div>
                                 <div class="text-center">
@@ -1264,14 +1199,13 @@
                             </div>
 
                             <div class="text-right my-3">
-                                <span class="text-xs font-semibold text-slate-600">จำนวนทั้งหมด 1 รายการ</span>
+                                <span class="text-xs font-semibold text-slate-600">จำนวนทั้งหมด ${locItems.length} รายการ</span>
                             </div>
 
                             <table class="w-full text-xs text-left border-collapse border border-slate-900 mt-2">
                                 <thead>
                                     <tr class="bg-slate-50 text-slate-900 font-bold border-b border-slate-900 uppercase">
                                         <th class="p-2.5 border-r border-slate-900 text-center w-12">ลำดับ</th>
-                                        <th class="p-2.5 border-r border-slate-900">SAP ID</th>
                                         <th class="p-2.5 border-r border-slate-900">MATERIAL</th>
                                         <th class="p-2.5 border-r border-slate-900">DESCRIPTION</th>
                                         <th class="p-2.5 border-r border-slate-900 text-center w-24">QUANTITY</th>
@@ -1279,23 +1213,13 @@
                                         <th class="p-2.5 text-center w-20">OUT</th>
                                     </tr>
                                 </thead>
-                                <tbody class="divide-y divide-slate-900">
-                                    <tr>
-                                        <td class="p-2.5 text-center border-r border-slate-900 font-semibold">1</td>
-                                        <td class="p-2.5 border-r border-slate-900 font-medium">${item.sapId || '-'}</td>
-                                        <td class="p-2.5 border-r border-slate-900 font-bold">${item.material || '-'}</td>
-                                        <td class="p-2.5 border-r border-slate-900 font-semibold">${item.description || '-'}</td>
-                                        <td class="p-2.5 text-center border-r border-slate-900 font-bold">${item.quantity || 0}</td>
-                                        <td class="p-2.5 text-center border-r border-slate-900">${item.unit || 'PC.'}</td>
-                                        <td class="p-2.5 text-center"></td>
-                                    </tr>
-                                </tbody>
+                                <tbody class="divide-y divide-slate-900">${rowsHtml}</tbody>
                                 <tfoot>
                                     <tr class="border-t-2 border-slate-900 font-bold bg-slate-50">
-                                        <td colspan="4" class="p-2.5 text-right border-r border-slate-900 uppercase tracking-wider">
+                                        <td colspan="3" class="p-2.5 text-right border-r border-slate-900 uppercase tracking-wider">
                                             รวมทั้งหมด (TOTAL):
                                         </td>
-                                        <td class="p-2.5 text-center border-r border-slate-900">${item.quantity || 0}</td>
+                                        <td class="p-2.5 text-center border-r border-slate-900">${totalQty}</td>
                                         <td class="p-2.5 text-center border-r border-slate-900">-</td>
                                         <td class="p-2.5 text-center"></td>
                                     </tr>
