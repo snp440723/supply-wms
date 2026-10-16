@@ -165,19 +165,25 @@
                     </div>
                 </div>
 
-                <!-- 2. OUTBOUND MENU -->
+                <!-- 2. PUTAWAY MENU (ย้าย LOCATION) -->
+                <button onclick="switchTab('putaway')" id="nav-putaway" class="w-full flex items-center space-x-3 px-4 py-3 rounded-lg font-medium text-sm transition-colors text-slate-300 hover:bg-slate-800 hover:text-white">
+                    <i class="fa-solid fa-boxes-stacked w-5 text-cyan-400"></i>
+                    <span>PUTAWAY (ย้าย Location)</span>
+                </button>
+
+                <!-- 3. OUTBOUND MENU -->
                 <button onclick="switchTab('outbound')" id="nav-outbound" class="w-full flex items-center space-x-3 px-4 py-3 rounded-lg font-medium text-sm transition-colors text-slate-300 hover:bg-slate-800 hover:text-white">
                     <i class="fa-solid fa-dolly w-5 text-amber-400"></i>
                     <span>OUTBOUND (เบิกออก)</span>
                 </button>
 
-                <!-- 3. DASHBOARD MENU -->
+                <!-- 4. DASHBOARD MENU -->
                 <button onclick="switchTab('dashboard')" id="nav-dashboard" class="w-full flex items-center space-x-3 px-4 py-3 rounded-lg font-medium text-sm transition-colors text-slate-300 hover:bg-slate-800 hover:text-white">
                     <i class="fa-solid fa-chart-pie w-5 text-sky-400"></i>
                     <span>DASHBOARD</span>
                 </button>
 
-                <!-- 4. HISTORY MENU WITH ACCORDION -->
+                <!-- 5. HISTORY MENU WITH ACCORDION -->
                 <div>
                     <button onclick="toggleSubMenu('history')" id="nav-history" class="w-full flex items-center justify-between px-4 py-3 rounded-lg font-medium text-sm transition-colors text-slate-300 hover:bg-slate-800 hover:text-white">
                         <div class="flex items-center space-x-3">
@@ -196,7 +202,7 @@
                     </div>
                 </div>
 
-                <!-- 5. PRINT MENU -->
+                <!-- 6. PRINT MENU -->
                 <button onclick="switchTab('print')" id="nav-print" class="w-full flex items-center space-x-3 px-4 py-3 rounded-lg font-medium text-sm transition-colors text-slate-300 hover:bg-slate-800 hover:text-white">
                     <i class="fa-solid fa-qrcode w-5 text-purple-400"></i>
                     <span>PRINT (พิมพ์บาร์โค้ด)</span>
@@ -244,7 +250,6 @@
                             </h4>
                             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <div>
-                                    <!-- บังคับให้กรอก SAP ID โดยใส่ required และเครื่องหมายดอกจัน -->
                                     <label class="block text-xs font-bold text-slate-700 uppercase mb-1.5 flex items-center gap-1.5">
                                         SAP ID <span class="text-rose-500">*</span>
                                     </label>
@@ -322,7 +327,91 @@
                 </div>
             </section>
 
-            <!-- 2. OUTBOUND PAGE -->
+            <!-- 2. PUTAWAY PAGE (โมดูลย้าย LOCATION - รักษา BARCODE เดิม) -->
+            <section id="page-putaway" class="space-y-6 hidden">
+                <div class="max-w-4xl mx-auto bg-white rounded-2xl shadow-xl border border-purple-100 p-6 md:p-8 space-y-6">
+                    <div class="border-b border-slate-100 pb-4 flex items-center justify-between">
+                        <div>
+                            <h3 class="font-bold text-slate-900 text-lg uppercase tracking-wide flex items-center gap-2">
+                                <i class="fa-solid fa-boxes-stacked text-cyan-600"></i> SUPPLY PUTAWAY (ย้าย LOCATION)
+                            </h3>
+                            <p class="text-xs text-slate-500 mt-1">สแกนหรือระบุ BARCODE ID เพื่อตรวจสอบรายการสินค้าและคีย์ Location ใหม่ที่ต้องการจัดเก็บ (คงรักษาเลข Barcode เดิมไว้)</p>
+                        </div>
+                    </div>
+
+                    <!-- Input Barcode Scan/Search -->
+                    <div class="bg-slate-50 p-5 rounded-2xl border border-slate-200 space-y-4">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                            <div class="md:col-span-2">
+                                <label class="block text-xs font-bold text-slate-700 uppercase mb-1.5 flex items-center gap-1.5">
+                                    <i class="fa-solid fa-barcode text-purple-600"></i> สแกน / พิมพ์ BARCODE ID หรือ MATERIAL *
+                                </label>
+                                <input type="text" id="putaway_barcode_input" onkeypress="handlePutawayScan(event)" placeholder="เช่น S-311-000002" class="w-full px-4 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-cyan-500 outline-none text-base bg-white font-bold text-purple-950 shadow-sm">
+                            </div>
+                            <div>
+                                <button onclick="searchPutawayItems()" class="w-full py-3 bg-cyan-600 hover:bg-cyan-700 text-white font-bold text-xs uppercase rounded-xl shadow-md transition-all flex items-center justify-center gap-2">
+                                    <i class="fa-solid fa-magnifying-glass"></i> ค้นหาบาร์โค้ด
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Putaway Found Items Details -->
+                    <div id="putaway_result_container" class="hidden space-y-6">
+                        <div class="p-4 bg-purple-50 rounded-xl border border-purple-100 flex flex-wrap items-center justify-between gap-4">
+                            <div>
+                                <span class="text-[10px] font-bold text-purple-400 uppercase tracking-wider block">BARCODE ID (คงเดิม)</span>
+                                <span id="putaway_current_barcode" class="text-lg font-black text-purple-900 font-mono">S-311-000002</span>
+                            </div>
+                            <div>
+                                <span class="text-[10px] font-bold text-purple-400 uppercase tracking-wider block">CURRENT LOCATION</span>
+                                <span id="putaway_current_location" class="text-lg font-black text-rose-600 font-mono">SH-01-01</span>
+                            </div>
+                            <div>
+                                <span class="text-[10px] font-bold text-purple-400 uppercase tracking-wider block">TOTAL ITEMS</span>
+                                <span id="putaway_item_count" class="text-lg font-black text-slate-800">1 รายการ</span>
+                            </div>
+                        </div>
+
+                        <!-- Items Table in this Barcode -->
+                        <div class="overflow-x-auto border border-slate-200 rounded-xl">
+                            <table class="w-full text-left text-xs text-slate-700">
+                                <thead class="bg-purple-50 font-bold uppercase text-purple-900 border-b border-purple-100">
+                                    <tr>
+                                        <th class="p-3">SAP ID</th>
+                                        <th class="p-3">MATERIAL</th>
+                                        <th class="p-3">DESCRIPTION</th>
+                                        <th class="p-3 text-right">QUANTITY</th>
+                                        <th class="p-3">UNIT</th>
+                                        <th class="p-3">CUSTOMER</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="putaway_items_tbody" class="divide-y divide-slate-100 font-medium"></tbody>
+                            </table>
+                        </div>
+
+                        <!-- New Location Input & Save Action -->
+                        <div class="bg-amber-50/80 p-5 rounded-2xl border border-amber-200 space-y-4">
+                            <h4 class="text-xs font-bold uppercase tracking-wider text-amber-900 flex items-center gap-2 border-b border-amber-200 pb-2">
+                                <i class="fa-solid fa-location-dot text-amber-600"></i> ระบุสถานที่จัดเก็บใหม่ (NEW LOCATION)
+                            </h4>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                                <div class="md:col-span-2">
+                                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1.5">NEW LOCATION *</label>
+                                    <input type="text" id="putaway_new_location" placeholder="เช่น SH-01-05" class="w-full px-4 py-3 rounded-xl border border-amber-300 focus:ring-2 focus:ring-amber-500 outline-none text-base bg-white font-bold text-slate-900 shadow-sm uppercase">
+                                </div>
+                                <div>
+                                    <button onclick="confirmPutawaySave()" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs uppercase rounded-xl shadow-lg transition-all flex items-center justify-center gap-2">
+                                        <i class="fa-solid fa-floppy-disk"></i> SAVE (บันทึกย้าย Location)
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 3. OUTBOUND PAGE -->
             <section id="page-outbound" class="space-y-6 hidden">
                 <div class="max-w-3xl mx-auto bg-white rounded-2xl shadow-xl border border-purple-100 p-8 space-y-8">
                     <h3 class="font-bold text-center text-slate-800 text-lg uppercase tracking-wide">
@@ -343,7 +432,7 @@
                 </div>
             </section>
 
-            <!-- 3. HISTORY PAGE -->
+            <!-- 4. HISTORY PAGE -->
             <section id="page-history" class="space-y-6 hidden">
                 <div class="bg-white rounded-2xl shadow-xl border border-slate-200 p-6 space-y-6">
                     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-100 pb-4">
@@ -384,7 +473,7 @@
                 </div>
             </section>
 
-            <!-- 4. DASHBOARD PAGE -->
+            <!-- 5. DASHBOARD PAGE -->
             <section id="page-dashboard" class="space-y-6 hidden">
                 <div class="bg-white rounded-2xl shadow-xl border border-slate-200 p-6 space-y-6">
                     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-100 pb-4">
@@ -425,7 +514,7 @@
                 </div>
             </section>
 
-            <!-- 5. PRINT PAGE -->
+            <!-- 6. PRINT PAGE -->
             <section id="page-print" class="space-y-6 hidden">
                 <div class="bg-white rounded-2xl shadow-xl border border-slate-200 p-6 space-y-6">
                     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-100 pb-4">
@@ -601,6 +690,7 @@
         let currentHistoryTab = 'inbound';
         let selectedPrintItems = new Set();
         let currentOutboundItems = [];
+        let currentPutawayMatchedItems = [];
 
         function toggleSubMenu(menuId) {
             const subnav = document.getElementById(`subnav-${menuId}`);
@@ -632,6 +722,10 @@
             if (tabId === 'inbound') {
                 if (titleEl) titleEl.innerText = "SUPPLY - INBOUND";
                 if (subTitleEl) subTitleEl.innerText = "บันทึกข้อมูลรับสินค้า Supply (MANUAL / SCAN)";
+            } else if (tabId === 'putaway') {
+                if (titleEl) titleEl.innerText = "SUPPLY - PUTAWAY";
+                if (subTitleEl) subTitleEl.innerText = "สแกน Barcode ID และระบุ Location ใหม่เพื่อทำรายการย้ายคลัง";
+                setTimeout(() => document.getElementById('putaway_barcode_input')?.focus(), 100);
             } else if (tabId === 'outbound') {
                 if (titleEl) titleEl.innerText = "SUPPLY - OUTBOUND";
                 if (subTitleEl) subTitleEl.innerText = "สแกน Barcode (เช่น S-311-XXXXXX) หรือ Material เพื่อนำออกสินค้า";
@@ -759,6 +853,103 @@
                 }
             } else {
                 showToast("ยังไม่ได้เชื่อมต่อ Firebase (ใช้งานใน Local)", "error");
+            }
+        }
+
+        // ===== ฟังก์ชันของ MODULE PUTAWAY (ย้าย LOCATION - รักษา BARCODE เดิม) =====
+        function handlePutawayScan(e) {
+            if (e.key === 'Enter') {
+                searchPutawayItems();
+            }
+        }
+
+        function searchPutawayItems() {
+            const inputVal = document.getElementById('putaway_barcode_input').value.trim().toLowerCase();
+            const resultContainer = document.getElementById('putaway_result_container');
+            if (!inputVal) {
+                showToast("กรุณาระบุ Barcode ID ก่อนค้นหา", "error");
+                return;
+            }
+
+            const allItems = window.inventoryData || [];
+
+            // ค้นหารายการจาก Barcode ID หรือ Material
+            currentPutawayMatchedItems = allItems.filter(i => {
+                const bc = String(i.barcodeNo || i.barcode || '').trim().toLowerCase();
+                const mat = String(i.material || '').trim().toLowerCase();
+                return bc === inputVal || mat === inputVal;
+            });
+
+            if (currentPutawayMatchedItems.length === 0) {
+                showToast(`ไม่พบข้อมูลสำหรับ Barcode / Material: ${inputVal}`, "error");
+                if (resultContainer) resultContainer.classList.add('hidden');
+                return;
+            }
+
+            const firstItem = currentPutawayMatchedItems[0];
+            const currentBC = firstItem.barcodeNo || firstItem.barcode || '-';
+            const currentLoc = firstItem.location || '-';
+
+            document.getElementById('putaway_current_barcode').innerText = currentBC;
+            document.getElementById('putaway_current_location').innerText = currentLoc;
+            document.getElementById('putaway_item_count').innerText = `${currentPutawayMatchedItems.length} รายการ`;
+
+            const tbody = document.getElementById('putaway_items_tbody');
+            tbody.innerHTML = currentPutawayMatchedItems.map(item => `
+                <tr class="hover:bg-purple-50 transition-colors">
+                    <td class="p-3 font-semibold text-slate-600">${item.sapId || '-'}</td>
+                    <td class="p-3 font-bold text-purple-950">${item.material || '-'}</td>
+                    <td class="p-3 font-medium text-slate-800">${item.description || '-'}</td>
+                    <td class="p-3 text-right font-bold text-purple-900">${item.quantity || 0}</td>
+                    <td class="p-3 text-slate-500">${item.unit || ''}</td>
+                    <td class="p-3 font-bold text-slate-700">${item.customer || 'SHARP'}</td>
+                </tr>
+            `).join('');
+
+            document.getElementById('putaway_new_location').value = '';
+            if (resultContainer) resultContainer.classList.remove('hidden');
+            setTimeout(() => document.getElementById('putaway_new_location')?.focus(), 100);
+        }
+
+        async function confirmPutawaySave() {
+            const newLoc = document.getElementById('putaway_new_location').value.trim();
+            if (!newLoc) {
+                alert("กรุณาระบุ New Location (โลเคชั่นใหม่) ก่อนบันทึก!");
+                document.getElementById('putaway_new_location').focus();
+                return;
+            }
+
+            if (currentPutawayMatchedItems.length === 0) {
+                showToast("ไม่มีรายการสินค้าให้ย้าย", "error");
+                return;
+            }
+
+            if (!window.isFirebaseConnected || !window.db) {
+                showToast("ยังไม่ได้เชื่อมต่อ Firebase", "error");
+                return;
+            }
+
+            try {
+                // อัปเดตเฉพาะ Location ใหม่ โดยรักษาเลข Barcode เดิมของแต่ละรายการไว้
+                for (const item of currentPutawayMatchedItems) {
+                    const originalBarcode = item.barcodeNo || item.barcode;
+                    const docRef = window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'inventory', item.id);
+                    
+                    await window.setDoc(docRef, {
+                        ...item,
+                        location: newLoc,
+                        barcodeNo: originalBarcode,
+                        barcode: originalBarcode
+                    });
+                }
+
+                showToast(`ย้าย Location ไปยัง ${newLoc} สำเร็จ! (เลข Barcode ยังคงเดิม)`);
+                document.getElementById('putaway_barcode_input').value = '';
+                document.getElementById('putaway_result_container').classList.add('hidden');
+                currentPutawayMatchedItems = [];
+            } catch (err) {
+                console.error("Putaway Save Error:", err);
+                showToast("เกิดข้อผิดพลาดในการบันทึกย้าย Location", "error");
             }
         }
 
